@@ -10,9 +10,9 @@ import { BrowserRouter as Router, Route } from "react-router-dom";
 function App() {
   return (
     <Router>
-    <div className="container" style={{ marginTop: '5rem'}}>
-      <RoomList />
-    </div>
+      <div className="container" style={{ marginTop: '2rem'}}>
+        <RoomList />
+      </div>
 
       <Route path="/room/:id" component={RoomDetails} />
     </Router>

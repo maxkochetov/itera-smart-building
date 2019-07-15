@@ -1,21 +1,21 @@
-import React, { Component } from 'react';
+import React from 'react';
 
 import * as am4core from "@amcharts/amcharts4/core";
 import * as am4charts from "@amcharts/amcharts4/charts";
 import am4themes_animated from "@amcharts/amcharts4/themes/animated";
 
-am4core.useTheme(am4themes_animated);
-
-class RoomDetails extends Component {
+class RoomDetails extends React.Component {
   chart: any;
 
   constructor(props: any) {
     super(props);
     this.state = {};
+
+    am4core.useTheme(am4themes_animated);
   }
 
   componentDidMount() {
-    this.createChart()
+    this.createChart();
   }
 
   componentWillUnmount() {
