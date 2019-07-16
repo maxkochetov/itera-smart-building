@@ -1,0 +1,6 @@
+.c-room-list__list {
+  height: 10rem;
+  overflow-y: scroll;
+  background: aliceblue;
+  border-radius: 0.25rem;
+}

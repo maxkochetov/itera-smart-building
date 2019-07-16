@@ -1,11 +1,11 @@
 import * as React from 'react';
 
 export interface RoomSearchProps {
-  onChange: (searchTerm: string) => void
+  onChange: (searchTerm: string) => void;
 }
 
 export interface RoomSearchState {
-
+  searchTerm: string;
 }
 
 class RoomSearch extends React.Component<RoomSearchProps, RoomSearchState> {
