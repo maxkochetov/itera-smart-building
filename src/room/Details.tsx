@@ -10,6 +10,7 @@ export interface RoomDetailsProps {
 
 export interface RoomDetailsState {
   location: string;
+  date: string;
 }
 
 class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
@@ -18,7 +19,8 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   constructor(props: any) {
     super(props);
     this.state = {
-      location: mockedChartData.location
+      location: mockedChartData.location,
+      date: mockedChartData.date
     };
   }
 
@@ -37,25 +39,25 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     this.chart.data = mockedChartData.data;
 
     // Create axes
-    var categoryAxis = this.chart.xAxes.push(new am4charts.CategoryAxis());
+    const categoryAxis = this.chart.xAxes.push(new am4charts.CategoryAxis());
     categoryAxis.dataFields.category = "timestamp";
     categoryAxis.renderer.minGridDistance = 40;
-    // categoryAxis.title.text = "Countries";
+    categoryAxis.title.text = "🕑 Time";
 
-    var valueAxis = this.chart.yAxes.push(new am4charts.ValueAxis());
-    // valueAxis.title.text = "Litres sold (M)";
+    const valueAxis = this.chart.yAxes.push(new am4charts.ValueAxis());
+    valueAxis.title.text = "🌡 (°C)";
 
     // Create series
-    // var series = this.chart.series.push(new am4charts.ColumnSeries());
+    // const series = this.chart.series.push(new am4charts.ColumnSeries());
     // series.dataFields.valueY = "temperature";
     // series.dataFields.categoryX = "timestamp";
     // series.name = "___";
     // series.tooltipText = "{name}: [bold]{valueY}[/]";
 
-    var series2 = this.chart.series.push(new am4charts.CurvedColumnSeries());
+    const series2 = this.chart.series.push(new am4charts.CurvedColumnSeries());
     series2.dataFields.valueY = "temperature";
     series2.dataFields.categoryX = "timestamp";
-    series2.name = "__";
+    series2.name = "Temperature";
     series2.tooltipText = "{name}: [bold]{valueY}[/]";
     series2.strokeWidth = 3;
 
@@ -66,18 +68,19 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     this.chart.cursor = new am4charts.XYCursor();
 
     // Add simple vertical scrollbar
-    this.chart.scrollbarY = new am4core.Scrollbar();
+    // this.chart.scrollbarY = new am4core.Scrollbar();
 
     // Add horizotal scrollbar with preview
-    var scrollbarX = new am4charts.XYChartScrollbar();
+    const scrollbarX = new am4charts.XYChartScrollbar();
     scrollbarX.series.push(series2);
     this.chart.scrollbarX = scrollbarX;
   }
 
   render() {
+    const { location, date } = this.state;
     return (
       <React.Fragment>
-        <div className="alert alert-warning text-center mt-5">{this.state.location}</div>
+        <div className="alert alert-warning text-center mt-5">{location} ({date})</div>
         <div id="chartdiv" style={{ width: "100%", height: "500px" }}></div>
       </React.Fragment>
     );
@@ -126,7 +129,7 @@ export default RoomDetails;
 
 const mockedChartData = {
   "location": "Meeting Room M3",
-  "date": "07/15/2019", // TODO: show date
+  "date": "07/15/2019",
   "data": [
     {
       "timestamp": "14:25",
