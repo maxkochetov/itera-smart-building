@@ -1,7 +1,9 @@
 import React from 'react';
 
 import * as am4core from "@amcharts/amcharts4/core";
-import * as am4charts from "@amcharts/amcharts4/charts";
+import {
+  XYChart, CategoryAxis, ValueAxis, CurvedColumnSeries, Legend, XYCursor, XYChartScrollbar
+} from "@amcharts/amcharts4/charts";
 import am4themes_animated from "@amcharts/amcharts4/themes/animated";
 
 export interface RoomDetailsProps {
@@ -13,8 +15,10 @@ export interface RoomDetailsState {
   date: string;
 }
 
+const chartId = 'js-chart';
+
 class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
-  chart: am4charts.XYChart | undefined;
+  chart: XYChart | undefined;
 
   constructor(props: any) {
     super(props);
@@ -35,16 +39,16 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   createChart() {
     am4core.useTheme(am4themes_animated);
 
-    this.chart = am4core.create("chartdiv", am4charts.XYChart);
+    this.chart = am4core.create(chartId, XYChart);
     this.chart.data = mockedChartData.data;
 
     // Create axes
-    const categoryAxis = this.chart.xAxes.push(new am4charts.CategoryAxis());
+    const categoryAxis = this.chart.xAxes.push(new CategoryAxis());
     categoryAxis.dataFields.category = "timestamp";
     categoryAxis.renderer.minGridDistance = 40;
     categoryAxis.title.text = "🕑 Time";
 
-    const valueAxis = this.chart.yAxes.push(new am4charts.ValueAxis());
+    const valueAxis = this.chart.yAxes.push(new ValueAxis());
     valueAxis.title.text = "🌡 (°C)";
 
     // Create series
@@ -54,7 +58,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     // series.name = "___";
     // series.tooltipText = "{name}: [bold]{valueY}[/]";
 
-    const series2 = this.chart.series.push(new am4charts.CurvedColumnSeries());
+    const series2 = this.chart.series.push(new CurvedColumnSeries());
     series2.dataFields.valueY = "temperature";
     series2.dataFields.categoryX = "timestamp";
     series2.name = "Temperature";
@@ -62,16 +66,16 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     series2.strokeWidth = 3;
 
     // Add legend
-    this.chart.legend = new am4charts.Legend();
+    this.chart.legend = new Legend();
 
     // Add cursor
-    this.chart.cursor = new am4charts.XYCursor();
+    this.chart.cursor = new XYCursor();
 
     // Add simple vertical scrollbar
     // this.chart.scrollbarY = new am4core.Scrollbar();
 
     // Add horizotal scrollbar with preview
-    const scrollbarX = new am4charts.XYChartScrollbar();
+    const scrollbarX = new XYChartScrollbar();
     scrollbarX.series.push(series2);
     this.chart.scrollbarX = scrollbarX;
   }
@@ -81,7 +85,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     return (
       <React.Fragment>
         <div className="alert alert-warning text-center mt-5">{location} ({date})</div>
-        <div id="chartdiv" style={{ width: "100%", height: "500px" }}></div>
+        <div id={chartId} style={{ width: "100%", height: "500px" }}></div>
       </React.Fragment>
     );
   }
