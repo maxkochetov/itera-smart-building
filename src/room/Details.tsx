@@ -36,16 +36,18 @@ const chartPieId = 'js-chart-pie';
 
 class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   chart: ITempChart | undefined;
+  pieChart: PieChart | undefined;
 
   constructor(props: RoomDetailsProps) {
     super(props);
-    const newDate = new Date();
+    am4core.useTheme(am4themes_animated);
+    const dateFrom = new Date();
 
     this.state = {
       location: mockedChartData.location,
       date: mockedChartData.date,
       datepicker: {
-        dateFrom: this.formatDate(new Date(newDate.setDate(newDate.getDate() - 1))),
+        dateFrom: this.formatDate(new Date(dateFrom.setDate(dateFrom.getDate() - 1))),
         timeFrom: new Date().toLocaleTimeString(),
         dateTo: this.formatDate(new Date()),
         timeTo: new Date().toLocaleTimeString()
@@ -54,17 +56,16 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   }
 
   componentDidMount() {
-    this.createChart();
+    this.createXyChart();
     this.createPieChart();
   }
 
   componentWillUnmount() {
     if (this.chart) this.chart.dispose();
+    if (this.pieChart) this.pieChart.dispose();
   }
 
-  createChart() {
-    am4core.useTheme(am4themes_animated);
-
+  createXyChart() {
     this.chart = am4core.create(chartId, XYChart);
     this.chart.data = mockedChartData.data;
 
@@ -97,11 +98,9 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   }
 
   createPieChart() {
-    // Create chart instance
-    const chart = am4core.create(chartPieId, PieChart);
+    this.pieChart = am4core.create(chartPieId, PieChart);
 
-    // Add data
-    chart.data = [{
+    this.pieChart.data = [{
       "country": "Open",
       "litres": 70
     }, {
@@ -111,7 +110,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     ];
 
     // Add and configure Series
-    const pieSeries = chart.series.push(new PieSeries());
+    const pieSeries = this.pieChart.series.push(new PieSeries());
     pieSeries.dataFields.value = "litres";
     pieSeries.dataFields.category = "country";
   }
@@ -126,7 +125,6 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   }
 
   formatDate(date: Date): string {
-    // return `${new Date(date.toLocaleDateString().split('/').join('-'))}`;
     return date.toISOString().split('T')[0];
   }
 
@@ -143,12 +141,12 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
                 </button>
               </Link>
 
-              <div className="alert alert-warning text-center">{location} ({date})</div>
+              <div className="alert alert-success text-center">{location} ({date})</div>
 
               <div className="row">
                 <div className="col-3">
                   <div className="form-group">
-                    <label >Date From</label>
+                    <label>Date From</label>
                     <input type="date" max="3000-12-31" min="1000-01-01" className="form-control"
                            onChange={({target: {value}}) => this.datepickerChanged('dateFrom', value)}
                            value={this.state.datepicker.dateFrom}/>
@@ -166,7 +164,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
 
                 <div className="col-3">
                   <div className="form-group">
-                    <label >Date To</label>
+                    <label>Date To</label>
                     <input type="date" max="3000-12-31" min="1000-01-01" className="form-control"
                            onChange={({target: {value}}) => this.datepickerChanged('dateTo', value)}
                            value={this.state.datepicker.dateTo}/>
@@ -183,7 +181,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
                 </div>
               </div>
 
-              <div className="alert alert-success text-center">Temperature</div>
+              <div className="alert alert-warning text-center">Temperature</div>
               <div id={chartId} style={{ width: "100%", height: "25rem" }}></div>
               <div className="alert alert-primary text-center">Open / Closed</div>
               <div id={chartPieId} style={{ width: "100%", height: "10rem" }}></div>
