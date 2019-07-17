@@ -8,28 +8,8 @@ import {
   PieChart, PieSeries
 } from "@amcharts/amcharts4/charts";
 import am4themes_animated from "@amcharts/amcharts4/themes/animated";
-
-export interface RoomDetailsProps {
-  onChange: (searchTerm: string) => void
-}
-
-export interface RoomDetailsState {
-  location: string;
-  date: string;
-  datepicker: {
-    dateFrom: string;
-    timeFrom: string;
-    dateTo: string;
-    timeTo: string;
-  }
-}
-
-interface ITempChart extends XYChart {
-  data: Array<{
-    timestamp: string;
-    temperature: number;
-  }>;
-}
+import './Details.css';
+import { RoomDetailsProps, RoomDetailsState, ITempChart } from './Details.interface';
 
 const chartId = 'js-chart';
 const chartPieId = 'js-chart-pie';
@@ -137,11 +117,16 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
             <div className="col-12">
               <Link to="/">
                 <button type="button" className="btn btn-outline-primary btn-lg btn-block mb-3">
-                  🔙 Select room..
+                  <span role="img" aria-label="go back">🔙</span> Select room..
                 </button>
               </Link>
 
-              <div className="alert alert-success text-center">{location} ({date})</div>
+              <div className="alert alert-primary c-location-container">
+                <h6>{location} ({date})</h6>
+                <button type="button" className="btn btn-outline-success">
+                  <span role="img" aria-label="go back">🔄</span> update..
+                </button>
+              </div>
 
               <div className="row">
                 <div className="col-3">
@@ -183,7 +168,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
 
               <div className="alert alert-warning text-center">Temperature</div>
               <div id={chartId} style={{ width: "100%", height: "25rem" }}></div>
-              <div className="alert alert-primary text-center">Open / Closed</div>
+              <div className="alert alert-secondary text-center">Open / Closed</div>
               <div id={chartPieId} style={{ width: "100%", height: "10rem" }}></div>
             </div>
           </div>
