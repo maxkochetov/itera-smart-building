@@ -1,6 +1,5 @@
 import * as React from 'react';
 
-import './List.css';
 import { Link } from "react-router-dom";
 import { IRoom } from './Details.interface'
 import { fetchRooms } from './RoomApi.service';
@@ -45,7 +44,7 @@ class RoomList extends React.Component<RoomListProps, RoomListState> {
 
   render() {
     return (
-      <div>
+      <div className="container" style={{ marginTop: '2rem'}}>
         <div className="row">
           <div className="col-6 offset-3">
             <RoomSearch onChange={this.filterRooms} />
@@ -54,20 +53,15 @@ class RoomList extends React.Component<RoomListProps, RoomListState> {
 
         <div className="row">
           <div className="col-6 offset-3">
-            <div className="nav flex-column nav-pills c-room-list__list" role="tablist" aria-orientation="vertical">
-              {this.state.rooms.map(room =>
-                <Link
-                  to={`/room/${room.id}`}
-                  key={room.id}
-                  className="nav-link"
-                  data-toggle="pill"
-                  href="#v-pills-home"
-                  role="tab"
-                  aria-controls="v-pills-home"
-                  aria-selected="true">
-                  {room.name}
-                </Link>
-              )}
+            <div className="list-group mb-5">
+            {this.state.rooms.map(room =>
+              <Link
+                to={`/room/${room.id}`}
+                key={room.id}
+                className="list-group-item list-group-item-action">
+                {room.name}
+              </Link>
+            )}
             </div>
           </div>
         </div>

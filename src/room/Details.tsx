@@ -1,8 +1,11 @@
 import React from 'react';
 
+import { Link } from "react-router-dom";
+
 import * as am4core from "@amcharts/amcharts4/core";
 import {
-  XYChart, CategoryAxis, ValueAxis, CurvedColumnSeries, Legend, XYCursor, XYChartScrollbar
+  XYChart, CategoryAxis, ValueAxis, CurvedColumnSeries, Legend, XYCursor, XYChartScrollbar,
+  PieChart, PieSeries
 } from "@amcharts/amcharts4/charts";
 import am4themes_animated from "@amcharts/amcharts4/themes/animated";
 
@@ -13,23 +16,46 @@ export interface RoomDetailsProps {
 export interface RoomDetailsState {
   location: string;
   date: string;
+  datepicker: {
+    dateFrom: string;
+    timeFrom: string;
+    dateTo: string;
+    timeTo: string;
+  }
+}
+
+interface ITempChart extends XYChart {
+  data: Array<{
+    timestamp: string;
+    temperature: number;
+  }>;
 }
 
 const chartId = 'js-chart';
+const chartPieId = 'js-chart-pie';
 
 class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
-  chart: XYChart | undefined;
+  chart: ITempChart | undefined;
 
-  constructor(props: any) {
+  constructor(props: RoomDetailsProps) {
     super(props);
+    const newDate = new Date();
+
     this.state = {
       location: mockedChartData.location,
-      date: mockedChartData.date
+      date: mockedChartData.date,
+      datepicker: {
+        dateFrom: this.formatDate(new Date(newDate.setDate(newDate.getDate() - 1))),
+        timeFrom: new Date().toLocaleTimeString(),
+        dateTo: this.formatDate(new Date()),
+        timeTo: new Date().toLocaleTimeString()
+      }
     };
   }
 
   componentDidMount() {
     this.createChart();
+    this.createPieChart();
   }
 
   componentWillUnmount() {
@@ -43,7 +69,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     this.chart.data = mockedChartData.data;
 
     // Create axes
-    const categoryAxis = this.chart.xAxes.push(new CategoryAxis());
+    const categoryAxis = this.chart.xAxes.push(new CategoryAxis()); // TODO: DateAxis?
     categoryAxis.dataFields.category = "timestamp";
     categoryAxis.renderer.minGridDistance = 40;
     categoryAxis.title.text = "🕑 Time";
@@ -51,19 +77,12 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     const valueAxis = this.chart.yAxes.push(new ValueAxis());
     valueAxis.title.text = "🌡 (°C)";
 
-    // Create series
-    // const series = this.chart.series.push(new am4charts.ColumnSeries());
-    // series.dataFields.valueY = "temperature";
-    // series.dataFields.categoryX = "timestamp";
-    // series.name = "___";
-    // series.tooltipText = "{name}: [bold]{valueY}[/]";
-
-    const series2 = this.chart.series.push(new CurvedColumnSeries());
-    series2.dataFields.valueY = "temperature";
-    series2.dataFields.categoryX = "timestamp";
-    series2.name = "Temperature";
-    series2.tooltipText = "{name}: [bold]{valueY}[/]";
-    series2.strokeWidth = 3;
+    const series = this.chart.series.push(new CurvedColumnSeries());
+    series.dataFields.valueY = "temperature";
+    series.dataFields.categoryX = "timestamp";
+    series.name = "Temperature";
+    series.tooltipText = "{name}: {valueY}";
+    series.strokeWidth = 2;
 
     // Add legend
     this.chart.legend = new Legend();
@@ -71,21 +90,106 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     // Add cursor
     this.chart.cursor = new XYCursor();
 
-    // Add simple vertical scrollbar
-    // this.chart.scrollbarY = new am4core.Scrollbar();
-
     // Add horizotal scrollbar with preview
     const scrollbarX = new XYChartScrollbar();
-    scrollbarX.series.push(series2);
+    scrollbarX.series.push(series);
     this.chart.scrollbarX = scrollbarX;
+  }
+
+  createPieChart() {
+    // Create chart instance
+    const chart = am4core.create(chartPieId, PieChart);
+
+    // Add data
+    chart.data = [{
+      "country": "Open",
+      "litres": 70
+    }, {
+      "country": "Closed",
+      "litres": 30
+    }
+    ];
+
+    // Add and configure Series
+    const pieSeries = chart.series.push(new PieSeries());
+    pieSeries.dataFields.value = "litres";
+    pieSeries.dataFields.category = "country";
+  }
+
+  datepickerChanged = (field: keyof RoomDetailsState['datepicker'], value: string) => {
+    this.setState({
+      datepicker: {
+        ...this.state.datepicker,
+        [field]: value
+      }
+    });
+  }
+
+  formatDate(date: Date): string {
+    // return `${new Date(date.toLocaleDateString().split('/').join('-'))}`;
+    return date.toISOString().split('T')[0];
   }
 
   render() {
     const { location, date } = this.state;
     return (
       <React.Fragment>
-        <div className="alert alert-warning text-center mt-5">{location} ({date})</div>
-        <div id={chartId} style={{ width: "100%", height: "500px" }}></div>
+        <div className="container">
+          <div className="row mb-5">
+            <div className="col-12">
+              <Link to="/">
+                <button type="button" className="btn btn-outline-primary btn-lg btn-block mb-3">
+                  🔙 Select room..
+                </button>
+              </Link>
+
+              <div className="alert alert-warning text-center">{location} ({date})</div>
+
+              <div className="row">
+                <div className="col-3">
+                  <div className="form-group">
+                    <label >Date From</label>
+                    <input type="date" max="3000-12-31" min="1000-01-01" className="form-control"
+                           onChange={({target: {value}}) => this.datepickerChanged('dateFrom', value)}
+                           value={this.state.datepicker.dateFrom}/>
+                  </div>
+                </div>
+
+                <div className="col-3">
+                  <div className="form-group">
+                    <label>Time From</label>
+                    <input type="time" min="1000-01-01" max="3000-12-31" className="form-control"
+                           onChange={({target: {value}}) => this.datepickerChanged('timeFrom', value)}
+                           value={this.state.datepicker.timeFrom}/>
+                  </div>
+                </div>
+
+                <div className="col-3">
+                  <div className="form-group">
+                    <label >Date To</label>
+                    <input type="date" max="3000-12-31" min="1000-01-01" className="form-control"
+                           onChange={({target: {value}}) => this.datepickerChanged('dateTo', value)}
+                           value={this.state.datepicker.dateTo}/>
+                  </div>
+                </div>
+
+                <div className="col-3">
+                  <div className="form-group">
+                    <label>Time To</label>
+                    <input type="time" min="1000-01-01" max="3000-12-31" className="form-control"
+                           onChange={({target: {value}}) => this.datepickerChanged('timeTo', value)}
+                           value={this.state.datepicker.timeTo}/>
+                  </div>
+                </div>
+              </div>
+
+              <div className="alert alert-success text-center">Temperature</div>
+              <div id={chartId} style={{ width: "100%", height: "25rem" }}></div>
+              <div className="alert alert-primary text-center">Open / Closed</div>
+              <div id={chartPieId} style={{ width: "100%", height: "10rem" }}></div>
+            </div>
+          </div>
+        </div>
       </React.Fragment>
     );
   }
@@ -137,11 +241,11 @@ const mockedChartData = {
   "data": [
     {
       "timestamp": "14:25",
-      "temperature": 23.5
+      "temperature": 18
     },
     {
       "timestamp": "14:26",
-      "temperature": 22.95
+      "temperature": 25
     },
     {
       "timestamp": "14:39",
@@ -149,7 +253,7 @@ const mockedChartData = {
     },
     {
       "timestamp": "14:41",
-      "temperature": 23
+      "temperature": 21
     },
     {
       "timestamp": "14:53",
@@ -157,11 +261,11 @@ const mockedChartData = {
     },
     {
       "timestamp": "14:56",
-      "temperature": 23
+      "temperature": 21
     },
     {
       "timestamp": "15:07",
-      "temperature": 23.55
+      "temperature": 25
     },
     {
       "timestamp": "15:12",
