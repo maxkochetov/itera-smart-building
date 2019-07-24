@@ -1,17 +1,12 @@
 import { XYChart } from "@amcharts/amcharts4/charts";
 
-export interface IRoom {
-  id: number;
-  name: string;
-}
-
 export interface RoomDetailsProps {
-  onChange: (searchTerm: string) => void
+  onChange: (searchTerm: string) => void;
+  match: any; // TODO: react router match interface
 }
 
 export interface RoomDetailsState {
   location: string;
-  date: string;
   datepicker: {
     dateFrom: string;
     timeFrom: string;
