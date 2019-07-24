@@ -1,15 +1,14 @@
 import * as React from 'react';
 
 import { Link } from "react-router-dom";
-import { IRoom } from './Details.interface'
 import { fetchRooms } from './RoomApi.service';
 import RoomSearch from './Search';
 
 export interface RoomListProps {}
 
 export interface RoomListState {
-  initialRooms: IRoom[];
-  rooms: IRoom[];
+  initialRooms: string[];
+  rooms: string[];
 }
 
 class RoomList extends React.Component<RoomListProps, RoomListState> {
@@ -36,7 +35,7 @@ class RoomList extends React.Component<RoomListProps, RoomListState> {
     const termLowerCased = searchTerm.toLowerCase();
 
     const rooms = searchTerm
-      ? initialRooms.filter(r => r.name.toLowerCase().startsWith(termLowerCased))
+      ? initialRooms.filter(r => r.toLowerCase().indexOf(termLowerCased) > -1)
       : initialRooms;
 
     this.setState({rooms});
@@ -56,10 +55,10 @@ class RoomList extends React.Component<RoomListProps, RoomListState> {
             <div className="list-group mb-5">
             {this.state.rooms.map(room =>
               <Link
-                to={`/room/${room.id}`}
-                key={room.id}
+                to={`/room/${room}`}
+                key={room}
                 className="list-group-item list-group-item-action">
-                {room.name}
+                {room}
               </Link>
             )}
             </div>
