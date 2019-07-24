@@ -2,14 +2,14 @@ import React from 'react';
 
 import { Link } from "react-router-dom";
 
-import * as am4core from "@amcharts/amcharts4/core";
+import {useTheme, create} from "@amcharts/amcharts4/core";
 import {
-  XYChart, CategoryAxis, ValueAxis, CurvedColumnSeries, Legend, XYCursor, XYChartScrollbar,
-  PieChart, PieSeries
+  XYChart, CategoryAxis, ValueAxis, CurvedColumnSeries, Legend, XYCursor, XYChartScrollbar, PieChart, PieSeries
 } from "@amcharts/amcharts4/charts";
 import am4themes_animated from "@amcharts/amcharts4/themes/animated";
 import './Details.css';
 import { RoomDetailsProps, RoomDetailsState, ITempChart } from './Details.interface';
+import { fetchRoomTemperature, fetchRoomStatistic, IRoomDoorStateStatisticResponse } from './RoomApi.service';
 
 const chartId = 'js-chart';
 const chartPieId = 'js-chart-pie';
@@ -20,24 +20,23 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
 
   constructor(props: RoomDetailsProps) {
     super(props);
-    am4core.useTheme(am4themes_animated);
+    useTheme(am4themes_animated);
     const dateFrom = new Date();
 
     this.state = {
-      location: mockedChartData.location,
-      date: mockedChartData.date,
+      location: props.match.params.id,
       datepicker: {
         dateFrom: this.formatDate(new Date(dateFrom.setDate(dateFrom.getDate() - 1))),
         timeFrom: new Date().toLocaleTimeString(),
         dateTo: this.formatDate(new Date()),
         timeTo: new Date().toLocaleTimeString()
+        // timeTo: new Date(timeTo.setMinutes(timeTo.getMinutes() - 30)).toLocaleTimeString()
       }
     };
   }
 
   componentDidMount() {
-    this.createXyChart();
-    this.createPieChart();
+    this.update();
   }
 
   componentWillUnmount() {
@@ -45,12 +44,47 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     if (this.pieChart) this.pieChart.dispose();
   }
 
-  createXyChart() {
-    this.chart = am4core.create(chartId, XYChart);
-    this.chart.data = mockedChartData.data;
+  update = () => {
+    this.fetchXyChartData()
+      .then(data => {
+        // this.createXyChart(data.map((el: any) => ({
+        //   temperature: el.temperature,
+        //   timestamp: el.timestamp.split('T')[1]
+        // })));
+
+        this.createXyChart(mockedChartData.data);
+    });
+
+    this.fetchPieChartData()
+      .then(data => {
+        // this.createPieChart(data);
+      });
+  }
+
+  fetchXyChartData() {
+    const { dateFrom, dateTo, timeFrom, timeTo } = this.state.datepicker
+    return fetchRoomTemperature({id: 'Meeting%20Room%20Spock', dateFrom, dateTo, timeFrom, timeTo});
+  }
+
+  fetchPieChartData() {
+    const { dateFrom, dateTo, timeFrom, timeTo } = this.state.datepicker
+    return fetchRoomStatistic({id: 'Meeting%20Room%20Spock', dateFrom, dateTo, timeFrom, timeTo});
+  }
+
+  mapChartDataToShortDates(data: any[]) {
+    return data.map(el => ({
+      temperature: el.temperature,
+      timestamp: this.formatDate(el.timestamp, 1)
+    }))
+  }
+
+  createXyChart(chartData: any) {
+    this.chart = create(chartId, XYChart);
+    // this.chart.data = mockedChartData.data;
+    this.chart.data = chartData;
 
     // Create axes
-    const categoryAxis = this.chart.xAxes.push(new CategoryAxis()); // TODO: DateAxis?
+    const categoryAxis = this.chart.xAxes.push(new CategoryAxis());
     categoryAxis.dataFields.category = "timestamp";
     categoryAxis.renderer.minGridDistance = 40;
     categoryAxis.title.text = "🕑 Time";
@@ -77,22 +111,25 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     this.chart.scrollbarX = scrollbarX;
   }
 
-  createPieChart() {
-    this.pieChart = am4core.create(chartPieId, PieChart);
+  createPieChart({openTime, closedTime}: IRoomDoorStateStatisticResponse) {
+    this.pieChart = create(chartPieId, PieChart);
 
-    this.pieChart.data = [{
-      "country": "Open",
-      "litres": 70
-    }, {
-      "country": "Closed",
-      "litres": 30
-    }
+    const splitedOpen = openTime.split(':');
+    const [openHours, openMinutes] = splitedOpen;
+
+    const splitedClosed = closedTime.split(':');
+    const [closedHours, closedMinutes] = splitedClosed;
+
+    this.pieChart.data = [
+      {state: 'Open', amount: (parseInt(openHours) * 60) + parseInt(openMinutes)},
+      {state: 'Closed', amount: (parseInt(closedHours) * 60) + parseInt(closedMinutes)}
     ];
 
     // Add and configure Series
     const pieSeries = this.pieChart.series.push(new PieSeries());
-    pieSeries.dataFields.value = "litres";
-    pieSeries.dataFields.category = "country";
+    pieSeries.dataFields.value = "amount";
+    pieSeries.dataFields.category = "state";
+    pieSeries.slices.template.tooltipText = "{category}: {value.value} minutes";
   }
 
   datepickerChanged = (field: keyof RoomDetailsState['datepicker'], value: string) => {
@@ -104,12 +141,12 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     });
   }
 
-  formatDate(date: Date): string {
-    return date.toISOString().split('T')[0];
+  formatDate(date: Date, chunk = 0): string {
+    return date.toISOString().split('T')[chunk];
   }
 
   render() {
-    const { location, date } = this.state;
+    const { location } = this.state;
     return (
       <React.Fragment>
         <div className="container">
@@ -120,13 +157,6 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
                   <span role="img" aria-label="go back">🔙</span> Select room..
                 </button>
               </Link>
-
-              <div className="alert alert-primary c-location-container">
-                <h6>{location} ({date})</h6>
-                <button type="button" className="btn btn-outline-success">
-                  <span role="img" aria-label="go back">🔄</span> update..
-                </button>
-              </div>
 
               <div className="row">
                 <div className="col-3">
@@ -164,6 +194,13 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
                            value={this.state.datepicker.timeTo}/>
                   </div>
                 </div>
+              </div>
+
+              <div className="alert alert-primary c-location-container">
+                <h6>{location}</h6>
+                <button onClick={this.update} type="button" className="btn btn-outline-primary">
+                  <span role="img" aria-label="go back">🔄</span> update..
+                </button>
               </div>
 
               <div className="alert alert-warning text-center">Temperature</div>
