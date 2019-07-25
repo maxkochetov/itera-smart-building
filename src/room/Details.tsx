@@ -2,9 +2,12 @@ import React from 'react';
 import { Link } from "react-router-dom";
 import { useTheme, create } from "@amcharts/amcharts4/core";
 import {
-  XYChart, CategoryAxis, ValueAxis, CurvedColumnSeries, Legend, XYCursor, XYChartScrollbar, PieChart, PieSeries,
-  DateAxis
+  XYChart, ValueAxis, CurvedColumnSeries, Legend, XYCursor, XYChartScrollbar, PieChart, PieSeries,
+  DateAxis, ColumnSeries, XYSeries
 } from "@amcharts/amcharts4/charts";
+
+import { color } from "@amcharts/amcharts4/core";
+
 import am4themes_animated from "@amcharts/amcharts4/themes/animated";
 
 import { NoData } from './NoData';
@@ -98,7 +101,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   fetchXyChartData() {
     const { dateFrom, dateTo, timeFrom, timeTo } = this.state.datepicker;
     return fetchRoomTemperature({ id: this.state.location, dateFrom, dateTo, timeFrom, timeTo })
-      .then(({data}) => data.map(el => ({
+      .then(({data}) => data.map((el: IXyChartData) => ({
         temperature: el.temperature,
         timestamp: new Date(el.timestamp)
       })))
@@ -117,45 +120,48 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   createXyChart(chartData: IXyChartData[]) {
     this.chart = create(chartId, XYChart);
 
-    this.setXyChartData(chartData);
     // const moreThanHardcodedLimit = this.chart.data.length > 12; // TODO: implement
 
     // Create axes
-    const categoryAxis = this.chart.xAxes.push(new DateAxis());
+    const dateAxis = this.chart.xAxes.push(new DateAxis());
+    dateAxis.title.text = "🕑 Time";
+    dateAxis.tooltipDateFormat = "MM/dd (HH:mm:ss)";
+    dateAxis.dateFormats.setKey("hour", "MMMM dt");
+    dateAxis.periodChangeDateFormats.setKey("hour", "MMMM dt");
     // categoryAxis.dataFields.category = "timestamp";
-    categoryAxis.title.text = "🕑 Time";
-    // categoryAxis.renderer.minGridDistance = 40;
 
     const valueAxis = this.chart.yAxes.push(new ValueAxis());
     valueAxis.title.text = "🌡 (°C)";
 
-    const series = this.chart.series.push(new CurvedColumnSeries());
+    const series = this.chart.series.push(new ColumnSeries());
     series.dataFields.valueY = "temperature";
     series.dataFields.dateX = "timestamp";
     series.name = "Temperature";
-    series.tooltipText = "{name} is {valueY}°";
-    // series.dataFields.valueYShow = 'total'
-    // series.strokeWidth = 2;
+
+    series.tooltipText = "{name} was {valueY}° on {dateX.formatDate('HH:mm:ss')}";
+    series.columns.template.fill = color("#fff3cd");
 
     this.chart.legend = new Legend();
     this.chart.cursor = new XYCursor();
-    this.chart.cursor.tooltipText = 'what';
 
     // Add horizotal scrollbar with preview
     const scrollbarX = new XYChartScrollbar();
     scrollbarX.series.push(series);
     this.chart.scrollbarX = scrollbarX;
+
+    this.setXyChartData(chartData);
   }
 
   createPieChart({ openTime, closedTime }: IDoorStateStatisticResponse) {
     this.pieChart = create(chartPieId, PieChart);
-    this.setPieChartData(this.preparePieChartDate({ openTime, closedTime }));
 
     // Add and configure Series
     const pieSeries = this.pieChart.series.push(new PieSeries());
     pieSeries.dataFields.value = "amount";
     pieSeries.dataFields.category = "state";
     pieSeries.slices.template.tooltipText = "{category}: {value.value} minutes";
+
+    this.setPieChartData(this.preparePieChartDate({ openTime, closedTime }));
   }
 
   splitTime(s: string): [string, string] {
@@ -185,9 +191,9 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
       <div className="row mb-5">
         <div className="col-12">
           <Link to="/">
-            <button type="button" className="btn btn-outline-primary btn-lg btn-block mb-3">
+            <button type="button" className="btn btn-light btn-lg btn-block mb-3 mt-3">
               <span role="img" aria-label="go back">🔙</span> select room..
-              </button>
+            </button>
           </Link>
 
           <h6 className="alert alert-primary text-center">{location}</h6>
@@ -250,7 +256,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
           {(this.state.charts.xy.length === 0 && !isLoading) && <NoData />}
 
           <div className="alert alert-secondary text-center">Proximity</div>
-          <div id={chartPieId} style={{
+          <div id={chartPieId} className="mt-5" style={{
             width: "100%",
             height: "10rem",
             display: this.state.charts.pie.length === 0 ? 'none' : 'block'
