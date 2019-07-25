@@ -1,21 +1,20 @@
 import React from 'react';
-
 import { Link } from "react-router-dom";
-
 import {useTheme, create} from "@amcharts/amcharts4/core";
 import {
   XYChart, CategoryAxis, ValueAxis, CurvedColumnSeries, Legend, XYCursor, XYChartScrollbar, PieChart, PieSeries
 } from "@amcharts/amcharts4/charts";
 import am4themes_animated from "@amcharts/amcharts4/themes/animated";
+
 import './Details.css';
-import { RoomDetailsProps, RoomDetailsState, ITempChart } from './Details.interface';
-import { fetchRoomTemperature, fetchRoomStatistic, IRoomDoorStateStatisticResponse } from './RoomApi.service';
+import { RoomDetailsProps, RoomDetailsState, IXyChart, IXyChartData } from './Details.interface';
+import { fetchRoomTemperature, fetchRoomStatistic, IDoorStateStatisticResponse, fetchDoorStateData } from './RoomApi.service';
 
 const chartId = 'js-chart';
 const chartPieId = 'js-chart-pie';
 
 class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
-  chart: ITempChart | undefined;
+  chart: IXyChart | undefined; // undefined because we can't render the element in constructor phase
   pieChart: PieChart | undefined;
 
   constructor(props: RoomDetailsProps) {
@@ -30,7 +29,10 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
         timeFrom: new Date().toLocaleTimeString(),
         dateTo: this.formatDate(new Date()),
         timeTo: new Date().toLocaleTimeString()
-        // timeTo: new Date(timeTo.setMinutes(timeTo.getMinutes() - 30)).toLocaleTimeString()
+      },
+      charts: {
+        pie: [],
+        xy: [],
       }
     };
   }
@@ -46,42 +48,46 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
 
   update = () => {
     this.fetchXyChartData()
-      .then(data => {
-        // this.createXyChart(data.map((el: any) => ({
-        //   temperature: el.temperature,
-        //   timestamp: el.timestamp.split('T')[1]
-        // })));
-
-        this.createXyChart(mockedChartData.data);
+      .then(({data}) => {
+        this.createXyChart(data.map((el: IXyChartData) => ({
+          temperature: el.temperature,
+          timestamp: el.timestamp.split('T')[1]
+        })));
     });
 
-    this.fetchPieChartData()
-      .then(data => {
-        // this.createPieChart(data);
-      });
+    this.fetchPieChartData().then(data => this.createPieChart(data));
+
+    this.fetchDoorStateChartData().then(console.log);
   }
 
   fetchXyChartData() {
-    const { dateFrom, dateTo, timeFrom, timeTo } = this.state.datepicker
-    return fetchRoomTemperature({id: 'Meeting%20Room%20Spock', dateFrom, dateTo, timeFrom, timeTo});
+    const { dateFrom, dateTo, timeFrom, timeTo } = this.state.datepicker;
+    return fetchRoomTemperature({id: this.state.location, dateFrom, dateTo, timeFrom, timeTo});
   }
 
   fetchPieChartData() {
-    const { dateFrom, dateTo, timeFrom, timeTo } = this.state.datepicker
-    return fetchRoomStatistic({id: 'Meeting%20Room%20Spock', dateFrom, dateTo, timeFrom, timeTo});
+    const { dateFrom, dateTo, timeFrom, timeTo } = this.state.datepicker;
+    return fetchRoomStatistic({id: this.state.location, dateFrom, dateTo, timeFrom, timeTo});
   }
 
-  mapChartDataToShortDates(data: any[]) {
-    return data.map(el => ({
-      temperature: el.temperature,
-      timestamp: this.formatDate(el.timestamp, 1)
-    }))
+  fetchDoorStateChartData() {
+    const { dateFrom, dateTo, timeFrom, timeTo } = this.state.datepicker;
+    return fetchDoorStateData({id: this.state.location, dateFrom, dateTo, timeFrom, timeTo});
   }
 
-  createXyChart(chartData: any) {
+  createXyChart(chartData: IXyChartData[]) {
     this.chart = create(chartId, XYChart);
-    // this.chart.data = mockedChartData.data;
-    this.chart.data = chartData;
+
+    this.setState({
+      charts: {
+        ...this.state.charts,
+        xy: !chartData ? [] : chartData
+      }
+    });
+
+    this.chart.data = this.state.charts.xy;
+
+    // const moreThanHardcodedLimit = this.chart.data.length > 12; // TODO: implement
 
     // Create axes
     const categoryAxis = this.chart.xAxes.push(new CategoryAxis());
@@ -99,10 +105,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     series.tooltipText = "{name}: {valueY}";
     series.strokeWidth = 2;
 
-    // Add legend
     this.chart.legend = new Legend();
-
-    // Add cursor
     this.chart.cursor = new XYCursor();
 
     // Add horizotal scrollbar with preview
@@ -111,25 +114,37 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     this.chart.scrollbarX = scrollbarX;
   }
 
-  createPieChart({openTime, closedTime}: IRoomDoorStateStatisticResponse) {
+  createPieChart({openTime, closedTime}: IDoorStateStatisticResponse) {
+    const [openHours, openMinutes] = this.splitTime(openTime);
+    const [closedHours, closedMinutes] = this.splitTime(closedTime);
+
     this.pieChart = create(chartPieId, PieChart);
 
-    const splitedOpen = openTime.split(':');
-    const [openHours, openMinutes] = splitedOpen;
+    const noData = parseInt(openTime) === 0 && parseInt(closedTime) === 0;
 
-    const splitedClosed = closedTime.split(':');
-    const [closedHours, closedMinutes] = splitedClosed;
+    this.setState({
+      charts: {
+        ...this.state.charts,
+        pie: noData ? [] : [
+          {state: 'Open', amount: (parseInt(openHours) * 60) + parseInt(openMinutes)},
+          {state: 'Closed', amount: (parseInt(closedHours) * 60) + parseInt(closedMinutes)}
+        ]
+      }
+    });
 
-    this.pieChart.data = [
-      {state: 'Open', amount: (parseInt(openHours) * 60) + parseInt(openMinutes)},
-      {state: 'Closed', amount: (parseInt(closedHours) * 60) + parseInt(closedMinutes)}
-    ];
+    this.pieChart.data = this.state.charts.pie;
 
     // Add and configure Series
     const pieSeries = this.pieChart.series.push(new PieSeries());
     pieSeries.dataFields.value = "amount";
     pieSeries.dataFields.category = "state";
     pieSeries.slices.template.tooltipText = "{category}: {value.value} minutes";
+  }
+
+  splitTime(str: string) {
+    const splitedOpen = str.split(':');
+    const [openHours, openMinutes] = splitedOpen;
+    return [openHours, openMinutes];
   }
 
   datepickerChanged = (field: keyof RoomDetailsState['datepicker'], value: string) => {
@@ -196,6 +211,8 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
                 </div>
               </div>
 
+              {/* TODO: info message about timings */}
+
               <div className="alert alert-primary c-location-container">
                 <h6>{location}</h6>
                 <button onClick={this.update} type="button" className="btn btn-outline-primary">
@@ -204,9 +221,25 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
               </div>
 
               <div className="alert alert-warning text-center">Temperature</div>
-              <div id={chartId} style={{ width: "100%", height: "25rem" }}></div>
-              <div className="alert alert-secondary text-center">Open / Closed</div>
-              <div id={chartPieId} style={{ width: "100%", height: "10rem" }}></div>
+              <div id={chartId} style={{
+                width: "100%",
+                height: "25rem",
+                display: this.state.charts.xy.length === 0 ? 'none' : 'block'
+              }}>
+              </div>
+
+              {this.state.charts.xy.length === 0 && <h3 className="text-center">No Data</h3>}
+
+              <div className="alert alert-secondary text-center">Proximity</div>
+              <div id={chartPieId} style={{
+                width: "100%",
+                height: "10rem",
+                display: this.state.charts.pie.length === 0 ? 'none' : 'block'
+              }}>
+              </div>
+
+              {this.state.charts.pie.length === 0 && <h3 className="text-center">No Data</h3>}
+
             </div>
           </div>
         </div>
@@ -216,80 +249,3 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
 }
 
 export default RoomDetails;
-
-// const mockedChartData = [{
-//   "country": "Lithuania",
-//   "litres": 501.9,
-//   "units": 250
-// }, {
-//   "country": "Czech Republic",
-//   "litres": 301.9,
-//   "units": 222
-// }, {
-//   "country": "Ireland",
-//   "litres": 201.1,
-//   "units": 170
-// }, {
-//   "country": "Germany",
-//   "litres": 165.8,
-//   "units": 122
-// }, {
-//   "country": "Australia",
-//   "litres": 139.9,
-//   "units": 99
-// }, {
-//   "country": "Austria",
-//   "litres": 128.3,
-//   "units": 85
-// }, {
-//   "country": "UK",
-//   "litres": 99,
-//   "units": 93
-// }, {
-//   "country": "Belgium",
-//   "litres": 60,
-//   "units": 50
-// }, {
-//   "country": "The Netherlands",
-//   "litres": 50,
-//   "units": 42
-// }];
-
-const mockedChartData = {
-  "location": "Meeting Room M3",
-  "date": "07/15/2019",
-  "data": [
-    {
-      "timestamp": "14:25",
-      "temperature": 18
-    },
-    {
-      "timestamp": "14:26",
-      "temperature": 25
-    },
-    {
-      "timestamp": "14:39",
-      "temperature": 23.5
-    },
-    {
-      "timestamp": "14:41",
-      "temperature": 21
-    },
-    {
-      "timestamp": "14:53",
-      "temperature": 23.55
-    },
-    {
-      "timestamp": "14:56",
-      "temperature": 21
-    },
-    {
-      "timestamp": "15:07",
-      "temperature": 25
-    },
-    {
-      "timestamp": "15:12",
-      "temperature": 23
-    }
-  ]
-};

@@ -1,8 +1,8 @@
 import { XYChart } from "@amcharts/amcharts4/charts";
+import { RouteComponentProps } from 'react-router-dom';
 
-export interface RoomDetailsProps {
+export interface RoomDetailsProps extends RouteComponentProps<{id: string}> {
   onChange: (searchTerm: string) => void;
-  match: any; // TODO: react router match interface
 }
 
 export interface RoomDetailsState {
@@ -13,11 +13,28 @@ export interface RoomDetailsState {
     dateTo: string;
     timeTo: string;
   }
+  charts: {
+    xy: IXyChartData[],
+    pie: IPieChart[]
+  }
 }
 
-export interface ITempChart extends XYChart {
-  data: Array<{
-    timestamp: string;
-    temperature: number;
-  }>;
+export interface IXyChart extends XYChart {
+  data: IXyChartData[];
+}
+
+export interface IPieChart {
+  state: 'Open' | 'Closed';
+  amount: number;
+}
+
+export interface IXyChartData {
+  timestamp: string;
+  temperature: number;
+}
+
+
+export interface IXyChartDoorStateData {
+  timestamp: string;
+  state: 'PRESENT' | 'NOT_PRESENT';
 }
