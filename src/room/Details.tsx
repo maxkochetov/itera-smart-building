@@ -40,7 +40,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   }
 
   componentDidMount() {
-    this.update();
+    this.create();
   }
 
   componentWillUnmount() {
@@ -48,30 +48,60 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     if (this.pieChart) this.pieChart.dispose();
   }
 
-  update = () => {
+  create = () => {
     Promise.all([this.fetchXyChartData(), this.fetchPieChartData(), this.fetchDoorStateChartData()])
       .then(([xyResponse, pieResponse, doorStateResponse]) => {
-        this.createXyChart(xyResponse.data.map((el: IXyChartData) => {
-          // const [date, time] = el.timestamp.split('-').splice(1).join('/').split('T');
-          return {
-            temperature: el.temperature,
-            timestamp: new Date(el.timestamp)
-            // timestamp: el.timestamp.split('T')[1]
-            // timestamp: el.timestamp.split('T')[1].substring(0, 5)
-            // timestamp: `${date} - ${time}`
-          }
-        }));
-
+        this.createXyChart(xyResponse);
         this.createPieChart(pieResponse);
-
         console.log(doorStateResponse); // TODO: doorStateResponse
       })
       .finally(() => this.setState({ isLoading: false }));
   }
 
+  update = () => {
+    Promise.all([this.fetchXyChartData(), this.fetchPieChartData(), this.fetchDoorStateChartData()])
+      .then(([xyResponse, pieResponse, doorStateResponse]) => {
+        this.setXyChartData(xyResponse);
+        this.setPieChartData(this.preparePieChartDate(pieResponse));
+        console.log(doorStateResponse); // TODO: doorStateResponse
+      });
+  }
+
+  setXyChartData(chartData: IXyChartData[]) {
+    this.setState({
+      charts: { ...this.state.charts, xy: chartData }
+    });
+
+    if (this.chart) this.chart.data = chartData;
+  }
+
+  setPieChartData(pieChartData: any[]) {
+    this.setState({
+      charts: { ...this.state.charts, pie: pieChartData }
+    });
+
+    if (this.pieChart) this.pieChart.data = pieChartData;
+  }
+
+  preparePieChartDate({openTime, closedTime}: IDoorStateStatisticResponse) {
+    const [openHours, openMinutes] = this.splitTime(openTime);
+    const [closedHours, closedMinutes] = this.splitTime(closedTime);
+
+    const noData = parseInt(openTime) === 0 && parseInt(closedTime) === 0;
+
+    return noData ? [] : [
+      { state: 'Open', amount: (parseInt(openHours) * 60) + parseInt(openMinutes) },
+      { state: 'Closed', amount: (parseInt(closedHours) * 60) + parseInt(closedMinutes) }
+    ];
+  }
+
   fetchXyChartData() {
     const { dateFrom, dateTo, timeFrom, timeTo } = this.state.datepicker;
-    return fetchRoomTemperature({id: this.state.location, dateFrom, dateTo, timeFrom, timeTo});
+    return fetchRoomTemperature({ id: this.state.location, dateFrom, dateTo, timeFrom, timeTo })
+      .then(({data}) => data.map(el => ({
+        temperature: el.temperature,
+        timestamp: new Date(el.timestamp)
+      })))
   }
 
   fetchPieChartData() {
@@ -87,15 +117,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   createXyChart(chartData: IXyChartData[]) {
     this.chart = create(chartId, XYChart);
 
-    this.setState({
-      charts: {
-        ...this.state.charts,
-        xy: !chartData ? [] : chartData
-      }
-    });
-
-    this.chart.data = this.state.charts.xy;
-
+    this.setXyChartData(chartData);
     // const moreThanHardcodedLimit = this.chart.data.length > 12; // TODO: implement
 
     // Create axes
@@ -115,7 +137,6 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     // series.dataFields.valueYShow = 'total'
     // series.strokeWidth = 2;
 
-
     this.chart.legend = new Legend();
     this.chart.cursor = new XYCursor();
     this.chart.cursor.tooltipText = 'what';
@@ -126,25 +147,9 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     this.chart.scrollbarX = scrollbarX;
   }
 
-  createPieChart({openTime, closedTime}: IDoorStateStatisticResponse) {
-    const [openHours, openMinutes] = this.splitTime(openTime);
-    const [closedHours, closedMinutes] = this.splitTime(closedTime);
-
+  createPieChart({ openTime, closedTime }: IDoorStateStatisticResponse) {
     this.pieChart = create(chartPieId, PieChart);
-
-    const noData = parseInt(openTime) === 0 && parseInt(closedTime) === 0;
-
-    this.setState({
-      charts: {
-        ...this.state.charts,
-        pie: noData ? [] : [
-          {state: 'Open', amount: (parseInt(openHours) * 60) + parseInt(openMinutes)},
-          {state: 'Closed', amount: (parseInt(closedHours) * 60) + parseInt(closedMinutes)}
-        ]
-      }
-    });
-
-    this.pieChart.data = this.state.charts.pie;
+    this.setPieChartData(this.preparePieChartDate({ openTime, closedTime }));
 
     // Add and configure Series
     const pieSeries = this.pieChart.series.push(new PieSeries());
@@ -153,8 +158,8 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     pieSeries.slices.template.tooltipText = "{category}: {value.value} minutes";
   }
 
-  splitTime(str: string) {
-    const splitedOpen = str.split(':');
+  splitTime(s: string): [string, string] {
+    const splitedOpen = s.split(':');
     const [openHours, openMinutes] = splitedOpen;
     return [openHours, openMinutes];
   }
@@ -228,7 +233,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
               <label>&nbsp;</label>
               <button onClick={this.update} type="button" className="form-control btn btn-outline-primary">
                 <span role="img" aria-label="go back">🔄</span> update..
-                </button>
+              </button>
             </div>
           </div>
 
