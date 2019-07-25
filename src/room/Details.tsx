@@ -125,7 +125,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     // Create axes
     const dateAxis = this.chart.xAxes.push(new DateAxis());
     dateAxis.title.text = "🕑 Time";
-    dateAxis.tooltipDateFormat = "MM/dd (HH:mm:ss)";
+    dateAxis.tooltipDateFormat = "MM/dd";
     dateAxis.dateFormats.setKey("hour", "MMMM dt");
     dateAxis.periodChangeDateFormats.setKey("hour", "MMMM dt");
     // categoryAxis.dataFields.category = "timestamp";
@@ -138,7 +138,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     series.dataFields.dateX = "timestamp";
     series.name = "Temperature";
 
-    series.tooltipText = "{name} was {valueY}° on {dateX.formatDate('HH:mm:ss')}";
+    series.tooltipText = "At {dateX.formatDate('HH:mm')} the temperature was {valueY}°";
     series.columns.template.fill = color("#fff3cd");
 
     this.chart.legend = new Legend();
