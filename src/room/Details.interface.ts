@@ -6,6 +6,7 @@ export interface RoomDetailsProps extends RouteComponentProps<{id: string}> {
 }
 
 export interface RoomDetailsState {
+  isLoading: boolean;
   location: string;
   datepicker: {
     dateFrom: string;
@@ -23,16 +24,16 @@ export interface IXyChart extends XYChart {
   data: IXyChartData[];
 }
 
+export interface IXyChartData {
+  timestamp: Date;
+  // timestamp: string;
+  temperature: number;
+}
+
 export interface IPieChart {
   state: 'Open' | 'Closed';
   amount: number;
 }
-
-export interface IXyChartData {
-  timestamp: string;
-  temperature: number;
-}
-
 
 export interface IXyChartDoorStateData {
   timestamp: string;

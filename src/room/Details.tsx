@@ -1,12 +1,13 @@
 import React from 'react';
 import { Link } from "react-router-dom";
-import {useTheme, create} from "@amcharts/amcharts4/core";
+import { useTheme, create } from "@amcharts/amcharts4/core";
 import {
-  XYChart, CategoryAxis, ValueAxis, CurvedColumnSeries, Legend, XYCursor, XYChartScrollbar, PieChart, PieSeries
+  XYChart, CategoryAxis, ValueAxis, CurvedColumnSeries, Legend, XYCursor, XYChartScrollbar, PieChart, PieSeries,
+  DateAxis
 } from "@amcharts/amcharts4/charts";
 import am4themes_animated from "@amcharts/amcharts4/themes/animated";
 
-import './Details.css';
+import { NoData } from './NoData';
 import { RoomDetailsProps, RoomDetailsState, IXyChart, IXyChartData } from './Details.interface';
 import { fetchRoomTemperature, fetchRoomStatistic, IDoorStateStatisticResponse, fetchDoorStateData } from './RoomApi.service';
 
@@ -23,6 +24,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     const dateFrom = new Date();
 
     this.state = {
+      isLoading: true,
       location: props.match.params.id,
       datepicker: {
         dateFrom: this.formatDate(new Date(dateFrom.setDate(dateFrom.getDate() - 1))),
@@ -47,17 +49,24 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   }
 
   update = () => {
-    this.fetchXyChartData()
-      .then(({data}) => {
-        this.createXyChart(data.map((el: IXyChartData) => ({
-          temperature: el.temperature,
-          timestamp: el.timestamp.split('T')[1]
-        })));
-    });
+    Promise.all([this.fetchXyChartData(), this.fetchPieChartData(), this.fetchDoorStateChartData()])
+      .then(([xyResponse, pieResponse, doorStateResponse]) => {
+        this.createXyChart(xyResponse.data.map((el: IXyChartData) => {
+          // const [date, time] = el.timestamp.split('-').splice(1).join('/').split('T');
+          return {
+            temperature: el.temperature,
+            timestamp: new Date(el.timestamp)
+            // timestamp: el.timestamp.split('T')[1]
+            // timestamp: el.timestamp.split('T')[1].substring(0, 5)
+            // timestamp: `${date} - ${time}`
+          }
+        }));
 
-    this.fetchPieChartData().then(data => this.createPieChart(data));
+        this.createPieChart(pieResponse);
 
-    this.fetchDoorStateChartData().then(console.log);
+        console.log(doorStateResponse); // TODO: doorStateResponse
+      })
+      .finally(() => this.setState({ isLoading: false }));
   }
 
   fetchXyChartData() {
@@ -90,23 +99,26 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     // const moreThanHardcodedLimit = this.chart.data.length > 12; // TODO: implement
 
     // Create axes
-    const categoryAxis = this.chart.xAxes.push(new CategoryAxis());
-    categoryAxis.dataFields.category = "timestamp";
-    categoryAxis.renderer.minGridDistance = 40;
+    const categoryAxis = this.chart.xAxes.push(new DateAxis());
+    // categoryAxis.dataFields.category = "timestamp";
     categoryAxis.title.text = "🕑 Time";
+    // categoryAxis.renderer.minGridDistance = 40;
 
     const valueAxis = this.chart.yAxes.push(new ValueAxis());
     valueAxis.title.text = "🌡 (°C)";
 
     const series = this.chart.series.push(new CurvedColumnSeries());
     series.dataFields.valueY = "temperature";
-    series.dataFields.categoryX = "timestamp";
+    series.dataFields.dateX = "timestamp";
     series.name = "Temperature";
-    series.tooltipText = "{name}: {valueY}";
-    series.strokeWidth = 2;
+    series.tooltipText = "{name} is {valueY}°";
+    // series.dataFields.valueYShow = 'total'
+    // series.strokeWidth = 2;
+
 
     this.chart.legend = new Legend();
     this.chart.cursor = new XYCursor();
+    this.chart.cursor.tooltipText = 'what';
 
     // Add horizotal scrollbar with preview
     const scrollbarX = new XYChartScrollbar();
@@ -161,90 +173,91 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   }
 
   render() {
-    const { location } = this.state;
+    const { location, isLoading } = this.state;
+
     return (
-      <React.Fragment>
-        <div className="container">
-          <div className="row mb-5">
-            <div className="col-12">
-              <Link to="/">
-                <button type="button" className="btn btn-outline-primary btn-lg btn-block mb-3">
-                  <span role="img" aria-label="go back">🔙</span> Select room..
+      <div className="container">
+      <div className="row mb-5">
+        <div className="col-12">
+          <Link to="/">
+            <button type="button" className="btn btn-outline-primary btn-lg btn-block mb-3">
+              <span role="img" aria-label="go back">🔙</span> select room..
+              </button>
+          </Link>
+
+          <h6 className="alert alert-primary text-center">{location}</h6>
+
+          <div className="row">
+            <div className="col">
+              <div className="form-group">
+                <label>Date From</label>
+                <input type="date" max="3000-12-31" min="1000-01-01" className="form-control"
+                  onChange={({ target: { value } }) => this.datepickerChanged('dateFrom', value)}
+                  value={this.state.datepicker.dateFrom} />
+              </div>
+            </div>
+
+            <div className="col">
+              <div className="form-group">
+                <label>Time From</label>
+                <input type="time" min="1000-01-01" max="3000-12-31" className="form-control"
+                  onChange={({ target: { value } }) => this.datepickerChanged('timeFrom', value)}
+                  value={this.state.datepicker.timeFrom} />
+              </div>
+            </div>
+
+            <div className="col">
+              <div className="form-group">
+                <label>Date To</label>
+                <input type="date" max="3000-12-31" min="1000-01-01" className="form-control"
+                  onChange={({ target: { value } }) => this.datepickerChanged('dateTo', value)}
+                  value={this.state.datepicker.dateTo} />
+              </div>
+            </div>
+
+            <div className="col">
+              <div className="form-group">
+                <label>Time To</label>
+                <input type="time" min="1000-01-01" max="3000-12-31" className="form-control"
+                  onChange={({ target: { value } }) => this.datepickerChanged('timeTo', value)}
+                  value={this.state.datepicker.timeTo} />
+              </div>
+            </div>
+
+            <div className="col">
+              <label>&nbsp;</label>
+              <button onClick={this.update} type="button" className="form-control btn btn-outline-primary">
+                <span role="img" aria-label="go back">🔄</span> update..
                 </button>
-              </Link>
-
-              <div className="row">
-                <div className="col-3">
-                  <div className="form-group">
-                    <label>Date From</label>
-                    <input type="date" max="3000-12-31" min="1000-01-01" className="form-control"
-                           onChange={({target: {value}}) => this.datepickerChanged('dateFrom', value)}
-                           value={this.state.datepicker.dateFrom}/>
-                  </div>
-                </div>
-
-                <div className="col-3">
-                  <div className="form-group">
-                    <label>Time From</label>
-                    <input type="time" min="1000-01-01" max="3000-12-31" className="form-control"
-                           onChange={({target: {value}}) => this.datepickerChanged('timeFrom', value)}
-                           value={this.state.datepicker.timeFrom}/>
-                  </div>
-                </div>
-
-                <div className="col-3">
-                  <div className="form-group">
-                    <label>Date To</label>
-                    <input type="date" max="3000-12-31" min="1000-01-01" className="form-control"
-                           onChange={({target: {value}}) => this.datepickerChanged('dateTo', value)}
-                           value={this.state.datepicker.dateTo}/>
-                  </div>
-                </div>
-
-                <div className="col-3">
-                  <div className="form-group">
-                    <label>Time To</label>
-                    <input type="time" min="1000-01-01" max="3000-12-31" className="form-control"
-                           onChange={({target: {value}}) => this.datepickerChanged('timeTo', value)}
-                           value={this.state.datepicker.timeTo}/>
-                  </div>
-                </div>
-              </div>
-
-              {/* TODO: info message about timings */}
-
-              <div className="alert alert-primary c-location-container">
-                <h6>{location}</h6>
-                <button onClick={this.update} type="button" className="btn btn-outline-primary">
-                  <span role="img" aria-label="go back">🔄</span> update..
-                </button>
-              </div>
-
-              <div className="alert alert-warning text-center">Temperature</div>
-              <div id={chartId} style={{
-                width: "100%",
-                height: "25rem",
-                display: this.state.charts.xy.length === 0 ? 'none' : 'block'
-              }}>
-              </div>
-
-              {this.state.charts.xy.length === 0 && <h3 className="text-center">No Data</h3>}
-
-              <div className="alert alert-secondary text-center">Proximity</div>
-              <div id={chartPieId} style={{
-                width: "100%",
-                height: "10rem",
-                display: this.state.charts.pie.length === 0 ? 'none' : 'block'
-              }}>
-              </div>
-
-              {this.state.charts.pie.length === 0 && <h3 className="text-center">No Data</h3>}
-
             </div>
           </div>
+
+          {/* TODO: info message about timings */}
+
+          <div className="alert alert-warning text-center">Temperature</div>
+          <div id={chartId} style={{
+            width: "100%",
+            height: "25rem",
+            display: this.state.charts.xy.length === 0 ? 'none' : 'block'
+          }}>
+          </div>
+
+          {(this.state.charts.xy.length === 0 && !isLoading) && <NoData />}
+
+          <div className="alert alert-secondary text-center">Proximity</div>
+          <div id={chartPieId} style={{
+            width: "100%",
+            height: "10rem",
+            display: this.state.charts.pie.length === 0 ? 'none' : 'block'
+          }}>
+          </div>
+
+          {(this.state.charts.pie.length === 0 && !isLoading) && <NoData />}
+
         </div>
-      </React.Fragment>
-    );
+      </div>
+    </div>
+    )
   }
 }
 
