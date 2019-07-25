@@ -22,12 +22,27 @@ class RoomList extends React.Component<RoomListProps, RoomListState> {
   }
 
   componentWillMount() {
-    fetchRooms().then(initialRooms => {
-      this.setState({
-        initialRooms,
-        rooms: [...initialRooms]
+    const rooms = sessionStorage.getItem('rooms');
+
+    if (rooms) {
+      this.setRooms(JSON.parse(rooms));
+    } else {
+      fetchRooms().then(initialRooms => {
+        this.setRooms(initialRooms);
+        this.cacheRooms(initialRooms);
       });
+    }
+  }
+
+  setRooms(initialRooms: string[]) {
+    this.setState({
+      initialRooms,
+      rooms: [...initialRooms]
     });
+  }
+
+  cacheRooms(initialRooms: string[]) {
+    sessionStorage.setItem('rooms', JSON.stringify(initialRooms));
   }
 
   filterRooms = (searchTerm: string) => {
