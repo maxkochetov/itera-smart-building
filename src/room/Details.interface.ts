@@ -35,6 +35,7 @@ export interface IPieChartItem {
 }
 
 export interface IXyChartDoorStateData {
-  timestamp: string;
+  startDateTime: string;
+  endDateTime: string;
   state: 'PRESENT' | 'NOT_PRESENT';
 }

@@ -30,7 +30,7 @@ type IFetchDoorStateDataOptions = IFetchRoomStatisticOptions;
 export function fetchRooms(): Promise<string[]> {
   return fetch(`${API_URL}/rooms`)
     .then(res => res.json())
-    .catch(err => console.error(err));
+    .catch(console.error);
 }
 
 export const fetchRoomTemperature = (opts: IFetchRoomTemperatureOptions): Promise<ITemperatureResponse> => {

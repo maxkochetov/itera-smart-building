@@ -7,19 +7,27 @@ import {
   XYChart, ValueAxis, XYCursor, XYChartScrollbar, PieChart, PieSeries, DateAxis, LineSeries, AxisRenderer
 } from "@amcharts/amcharts4/charts";
 
-import { NoData } from './NoData';
-import { RoomDetailsProps, RoomDetailsState, IXyChart, IXyChartDataItem, IPieChartItem } from './Details.interface';
+import {
+  RoomDetailsProps, RoomDetailsState, IXyChart, IXyChartDataItem, IPieChartItem, IXyChartDoorStateData
+} from './Details.interface';
 
 import {
   fetchRoomTemperature, fetchRoomStatistic, IDoorStateStatisticResponse, fetchDoorStateData, IDoorStateDataResponse
 } from './RoomApi.service';
 
-const chartId = 'js-chart';
-const chartPieId = 'js-chart-pie';
+import { NoData } from './NoData';
+
+const CFG = {
+  chartId: 'js-chart',
+  chartPieId: 'js-chart-pie',
+  openedColor: 'blue',
+  closedColor: 'red'
+}
 
 class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   chart: IXyChart | undefined; // undefined because we can't render the element in constructor phase
   pieChart: PieChart | undefined;
+  dateAxis: DateAxis<AxisRenderer> | undefined;
 
   constructor(props: RoomDetailsProps) {
     super(props);
@@ -56,8 +64,9 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
       .then(([xyResponse, pieResponse, doorStateResponse]) => {
         this.createXyChart(xyResponse);
         this.createPieChart(pieResponse);
-        console.log(doorStateResponse); // TODO: doorStateResponse
+        this.renderRanges(doorStateResponse);
       })
+      .catch(console.error)
       .finally(() => this.setState({ isLoading: false }));
   }
 
@@ -66,8 +75,24 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
       .then(([xyResponse, pieResponse, doorStateResponse]) => {
         this.setXyChartData(xyResponse);
         this.setPieChartData(this.preparePieChartDate(pieResponse));
-        console.log(doorStateResponse); // TODO: doorStateResponse
-      });
+        this.renderRanges(doorStateResponse);
+      })
+      .catch(console.error);
+  }
+
+  renderRanges({data}: IDoorStateDataResponse) {
+    const colors: {[key in IXyChartDoorStateData['state']]: Color} = {
+      PRESENT: color(CFG.closedColor),
+      NOT_PRESENT: color(CFG.openedColor)
+    };
+
+    const { dateAxis } = this;
+
+    if (!dateAxis) return;
+
+    data.forEach((el: IXyChartDoorStateData) => {
+      this.createRange(dateAxis, new Date(el.startDateTime), new Date(el.endDateTime), colors[el.state]);
+    });
   }
 
   setXyChartData(xyChartData: IXyChartDataItem[]) {
@@ -105,8 +130,11 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
       .then(({ data }) => data.map((el: IXyChartDataItem) => ({
         temperature: el.temperature,
         timestamp: new Date(el.timestamp)
-      }))
-    );
+      })))
+      .catch(err => {
+        console.error(err);
+        return [];
+      });
   }
 
   fetchPieChartData(): Promise<IDoorStateStatisticResponse> {
@@ -122,26 +150,21 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     (range as any).value = from;
     (range as any).endValue = to;
     range.axisFill.fill = color;
-    range.axisFill.fillOpacity = 0.25;
-    range.label.disabled = true;
+    range.axisFill.fillOpacity = 0.3;
   }
 
   createXyChart(chartData: IXyChartDataItem[]) {
-    this.chart = create(chartId, XYChart);
+    this.chart = create(CFG.chartId, XYChart);
     this.chart.cursor = new XYCursor();
     this.setXyChartData(chartData);
 
-    // Create axes
-    const dateAxis = this.chart.xAxes.push(new DateAxis());
-    dateAxis.title.text = "🕑 Time";
-    dateAxis.tooltipDateFormat = "MM/dd";
-    dateAxis.dateFormats.setKey("hour", "MMMM dt");
-    dateAxis.periodChangeDateFormats.setKey("hour", "MMMM dt");
-
-    this.createRange(dateAxis, new Date('2019-07-25T15:57:06'), new Date('2019-07-25T21:59:23'), this.chart.colors.getIndex(0));
-    this.createRange(dateAxis, new Date('2019-07-25T21:59:23'), new Date('2019-07-26T05:00:00'), this.chart.colors.getIndex(2));
-    this.createRange(dateAxis, new Date('2019-07-25T05:00:00'), new Date('2019-07-26T13:47:31'), this.chart.colors.getIndex(0));
-    // categoryAxis.dataFields.category = "timestamp";
+    this.dateAxis = this.chart.xAxes.push(new DateAxis());
+    this.dateAxis.title.text = "🕑 Time";
+    this.dateAxis.tooltipDateFormat = "MM/dd";
+    this.dateAxis.dateFormats.setKey("hour", "MMMM dt");
+    this.dateAxis.periodChangeDateFormats.setKey("hour", "MMMM dt");
+    this.dateAxis.startLocation = 1;
+    this.dateAxis.endLocation = 0;
 
     const valueAxis = this.chart.yAxes.push(new ValueAxis());
     valueAxis.title.text = "🌡 (°C)";
@@ -150,15 +173,13 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     series.dataFields.valueY = "temperature";
     series.dataFields.dateX = "timestamp";
     series.name = "Temperature";
-    series.stroke = this.chart.colors.getIndex(11);
-    // series.fill = color('#ea');
-    // series.fill = color('#ffeeba');
-    series.fill = this.chart.colors.getIndex(12);
-    series.strokeWidth = 0.5;
-    series.strokeOpacity = 0.8;
-    series.fillOpacity = 0.6;
-    // series.tensionY = 0;
-    // series.tensionX = 0.5;
+    series.stroke = color('yellow').lighten(0.1);
+    series.fill = color('#efefef');
+    series.strokeWidth = 1;
+    // series.strokeOpacity = 0.8;
+    // series.fillOpacity = 0.5;
+    // series.tensionY = 0.97;
+    // series.tensionX = 0.97;
     series.tooltipText = "At {dateX.formatDate('HH:mm')} the temperature was {valueY}°";
 
     const scrollbarX = new XYChartScrollbar(); // Add horizotal scrollbar with preview
@@ -167,7 +188,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   }
 
   createPieChart({ openTime, closedTime }: IDoorStateStatisticResponse) {
-    this.pieChart = create(chartPieId, PieChart);
+    this.pieChart = create(CFG.chartPieId, PieChart);
 
     const pieSeries = this.pieChart.series.push(new PieSeries());
     pieSeries.dataFields.value = "amount";
@@ -204,14 +225,14 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
         <div className="row mb-5">
           <div className="col-12">
             <div className="row mb-3 mt-3">
-              <div className="col-2">
+              <div className="col-3">
                 <Link to="/" className="text-decoration-none">
                   <button type="button" className="btn btn-light alert btn-block">
                     <span role="img" aria-label="go back">←</span> select room
                   </button>
                 </Link>
               </div>
-              <div className="col-10">
+              <div className="col-9">
                 <div className="alert alert-success text-center">
                   {location}
                 </div>
@@ -267,27 +288,27 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
 
             <div className="alert alert-warning d-flex justify-content-around align-items-center">
               <div className="d-flex align-items-center">
-                <div className="rounded-circle mr-2" style={{ width: '1rem', height: '1rem', backgroundColor: '#c12b22' }}></div>
+                <div className="rounded-circle mr-2" style={{ width: '1rem', height: '1rem', backgroundColor: CFG.openedColor }}></div>
                 <div>Door Opened</div>
               </div>
               <div>Temperature</div>
               <div className="d-flex align-items-center">
-                <div className="rounded-circle mr-2" style={{ width: '1rem', height: '1rem', backgroundColor: '#6f94d6' }}></div>
+                <div className="rounded-circle mr-2" style={{ width: '1rem', height: '1rem', backgroundColor: CFG.closedColor }}></div>
                 <div>Door Closed</div>
               </div>
             </div>
 
-            <div id={chartId} style={{
+            <div id={CFG.chartId} style={{
               width: "100%",
               height: "25rem",
-              display: this.state.charts.xy.length === 0 ? 'none' : 'block'
+              // display: this.state.charts.xy.length === 0 ? 'none' : 'block'
             }}>
             </div>
 
             {(this.state.charts.xy.length === 0 && !isLoading) && <NoData />}
 
             <div className="alert alert-secondary text-center">Proximity</div>
-            <div id={chartPieId} className="mt-5" style={{
+            <div id={CFG.chartPieId} className="mt-5" style={{
               width: "100%",
               height: "10rem",
               display: this.state.charts.pie.length === 0 ? 'none' : 'block'
