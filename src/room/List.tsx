@@ -4,9 +4,9 @@ import { Link } from "react-router-dom";
 import { fetchRooms } from './RoomApi.service';
 import RoomSearch from './Search';
 
-export interface RoomListProps {}
+interface RoomListProps {}
 
-export interface RoomListState {
+interface RoomListState {
   initialRooms: string[];
   rooms: string[];
 }
@@ -56,9 +56,9 @@ class RoomList extends React.Component<RoomListProps, RoomListState> {
     this.setState({rooms});
   }
 
-  render() {
+  render(): JSX.Element {
     return (
-      <div className="container" style={{ marginTop: '2rem'}}>
+      <div className="container mt-4">
         <div className="row">
           <div className="col-6 offset-3">
             <RoomSearch onChange={this.filterRooms} />
@@ -68,7 +68,7 @@ class RoomList extends React.Component<RoomListProps, RoomListState> {
         <div className="row">
           <div className="col-6 offset-3">
             <div className="list-group mb-5">
-            {this.state.rooms.map(room =>
+            {this.state.rooms.map((room: string) =>
               <Link
                 to={`/room/${room}`}
                 key={room}
@@ -79,7 +79,6 @@ class RoomList extends React.Component<RoomListProps, RoomListState> {
             </div>
           </div>
         </div>
-
       </div>
     );
   }

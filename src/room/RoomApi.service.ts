@@ -1,5 +1,5 @@
 import { API_URL } from '../constants';
-import { IXyChartDoorStateData, IXyChartData } from './Details.interface';
+import { IXyChartDoorStateData, IXyChartDataItem } from './Details.interface';
 
 export interface IDoorStateDataResponse {
   data: IXyChartDoorStateData[];
@@ -7,7 +7,7 @@ export interface IDoorStateDataResponse {
 }
 
 export interface ITemperatureResponse {
-  data: IXyChartData[];
+  data: IXyChartDataItem[];
   location: string;
 }
 

@@ -15,23 +15,22 @@ export interface RoomDetailsState {
     timeTo: string;
   }
   charts: {
-    xy: IXyChartData[],
-    pie: IPieChart[]
+    xy: IXyChartDataItem[],
+    pie: IPieChartItem[]
   }
 }
 
 export interface IXyChart extends XYChart {
-  data: IXyChartData[];
+  data: IXyChartDataItem[];
 }
 
-export interface IXyChartData {
+export interface IXyChartDataItem {
   timestamp: Date;
-  // timestamp: string;
   temperature: number;
 }
 
-export interface IPieChart {
-  state: 'Open' | 'Closed';
+export interface IPieChartItem {
+  state: 'Opened' | 'Closed';
   amount: number;
 }
 

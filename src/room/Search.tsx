@@ -17,7 +17,7 @@ class RoomSearch extends React.Component<RoomSearchProps, RoomSearchState> {
     };
   }
 
-  render() {
+  render(): JSX.Element {
     return (
       <div className="form-group">
         <input
