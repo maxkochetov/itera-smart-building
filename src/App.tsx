@@ -9,7 +9,7 @@ import { BrowserRouter as Router, Route } from "react-router-dom";
 
 function App() {
   return (
-    <Router>
+    <Router basename='/itera-smart-building'>
       <Route exact path="/" component={RoomList} />
       <Route path="/room/:id" component={RoomDetails} />
     </Router>
