@@ -1,4 +1,5 @@
 import { XYChart } from "@amcharts/amcharts4/charts";
+import { Color } from "@amcharts/amcharts4/core";
 import { RouteComponentProps } from 'react-router-dom';
 
 export interface RoomDetailsProps extends RouteComponentProps<{id: string}> {
@@ -32,6 +33,7 @@ export interface IXyChartDataItem {
 export interface IPieChartItem {
   state: 'Opened' | 'Closed';
   amount: number;
+  color: Color;
 }
 
 export interface IXyChartDoorStateData {

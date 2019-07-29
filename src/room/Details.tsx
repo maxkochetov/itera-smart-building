@@ -29,6 +29,11 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   pieChart: PieChart | undefined;
   dateAxis: DateAxis<AxisRenderer> | undefined;
 
+  rangesColors: { [key in IXyChartDoorStateData['state']]: Color } = {
+    PRESENT: color(CFG.closedColor),
+    NOT_PRESENT: color(CFG.openedColor)
+  };
+
   constructor(props: RoomDetailsProps) {
     super(props);
     useTheme(am4themes_animated);
@@ -81,17 +86,13 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   }
 
   renderRanges({data}: IDoorStateDataResponse) {
-    const colors: {[key in IXyChartDoorStateData['state']]: Color} = {
-      PRESENT: color(CFG.closedColor),
-      NOT_PRESENT: color(CFG.openedColor)
-    };
-
     const { dateAxis } = this;
-
     if (!dateAxis) return;
 
+    dateAxis.axisRanges.clear();
+
     data.forEach((el: IXyChartDoorStateData) => {
-      this.createRange(dateAxis, new Date(el.startDateTime), new Date(el.endDateTime), colors[el.state]);
+      this.createRange(dateAxis, new Date(el.startDateTime), new Date(el.endDateTime), this.rangesColors[el.state]);
     });
   }
 
@@ -117,11 +118,15 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
 
     const noData = parseInt(openTime) === 0 && parseInt(closedTime) === 0; // BE response "00:00:00"
 
+    const calcAmount = (openedHours: string, openedMinutes: string): number => {
+      return (parseInt(openedHours) * 60) + parseInt(openedMinutes);
+    }
+
     return noData
       ? []
       : [
-        { state: 'Opened', amount: (parseInt(openedHours) * 60) + parseInt(openedMinutes) },
-        { state: 'Closed', amount: (parseInt(closedHours) * 60) + parseInt(closedMinutes) }
+        {state: 'Opened', amount: calcAmount(openedHours, openedMinutes), color: color(CFG.openedColor).lighten(0.65)},
+        {state: 'Closed', amount: calcAmount(closedHours, closedMinutes), color: color(CFG.closedColor).lighten(0.65)}
       ];
   }
 
@@ -160,7 +165,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
 
     this.dateAxis = this.chart.xAxes.push(new DateAxis());
     this.dateAxis.title.text = "🕑 Time";
-    this.dateAxis.tooltipDateFormat = "MM/dd";
+    this.dateAxis.tooltipDateFormat = "dd.MM";
     this.dateAxis.dateFormats.setKey("hour", "MMMM dt");
     this.dateAxis.periodChangeDateFormats.setKey("hour", "MMMM dt");
     this.dateAxis.startLocation = 1;
@@ -191,6 +196,8 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     this.pieChart = create(CFG.chartPieId, PieChart);
 
     const pieSeries = this.pieChart.series.push(new PieSeries());
+    pieSeries.slices.template.propertyFields.fill = "color";
+    pieSeries.slices.template.propertyFields.stroke = "color";
     pieSeries.dataFields.value = "amount";
     pieSeries.dataFields.category = "state";
     pieSeries.slices.template.tooltipText = "{category}: {value.value} minutes";
