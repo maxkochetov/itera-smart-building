@@ -1,6 +1,6 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "ec33933bab378f0755a91a27a3e17b65",
+    "revision": "f9c6a2c870ac805ed9df61feaa993e7b",
     "url": "/itera-smart-building/index.html"
   },
   {
@@ -8,7 +8,7 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/itera-smart-building/static/css/3.22a7d4ef.chunk.css"
   },
   {
-    "revision": "e6a323fc3a8dc82518e4",
+    "revision": "71fda361c53bf3d48264",
     "url": "/itera-smart-building/static/css/main.5facb584.chunk.css"
   },
   {
@@ -28,8 +28,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/itera-smart-building/static/js/6.7657373e.chunk.js"
   },
   {
-    "revision": "e6a323fc3a8dc82518e4",
-    "url": "/itera-smart-building/static/js/main.3c10f2cd.chunk.js"
+    "revision": "71fda361c53bf3d48264",
+    "url": "/itera-smart-building/static/js/main.78faa141.chunk.js"
   },
   {
     "revision": "51688e4e531f0533b7fe",
