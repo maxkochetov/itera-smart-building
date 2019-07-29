@@ -26,6 +26,7 @@ interface IFetchRoomStatisticOptions {
 
 type IFetchRoomTemperatureOptions = IFetchRoomStatisticOptions;
 type IFetchDoorStateDataOptions = IFetchRoomStatisticOptions;
+type IDateTimeUriOptions = IFetchRoomStatisticOptions;
 
 export function fetchRooms(): Promise<string[]> {
   return fetch(`${API_URL}/rooms`)
@@ -34,9 +35,7 @@ export function fetchRooms(): Promise<string[]> {
 }
 
 export const fetchRoomTemperature = (opts: IFetchRoomTemperatureOptions): Promise<ITemperatureResponse> => {
-  const { id, dateFrom, timeFrom, dateTo, timeTo } = opts;
-
-  const url = `${API_URL}/rooms/${id}/temperatureData?startDateTime=${dateFrom}T${timeFrom}.000&endDateTime=${dateTo}T${timeTo}.000`;
+  const url = `${API_URL}/rooms/${opts.id}/temperatureData?${getDateTimeUri(opts)}`;
 
   return fetch(url)
     .then(res => res.json())
@@ -44,9 +43,7 @@ export const fetchRoomTemperature = (opts: IFetchRoomTemperatureOptions): Promis
 }
 
 export const fetchRoomStatistic = (opts: IFetchRoomStatisticOptions): Promise<IDoorStateStatisticResponse> => {
-  const { id, dateFrom, timeFrom, dateTo, timeTo } = opts;
-
-  const url = `${API_URL}/rooms/${id}/doorStateStatistic?startDateTime=${dateFrom}T${timeFrom}.000&endDateTime=${dateTo}T${timeTo}.000`;
+  const url = `${API_URL}/rooms/${opts.id}/doorStateStatistic?${getDateTimeUri(opts)}`;
 
   return fetch(url)
     .then(res => res.json())
@@ -54,11 +51,20 @@ export const fetchRoomStatistic = (opts: IFetchRoomStatisticOptions): Promise<ID
 }
 
 export const fetchDoorStateData = (opts: IFetchDoorStateDataOptions): Promise<IDoorStateDataResponse> => {
-  const { id, dateFrom, timeFrom, dateTo, timeTo } = opts;
-
-  const url = `${API_URL}/rooms/${id}/doorStateData?startDateTime=${dateFrom}T${timeFrom}.000&endDateTime=${dateTo}T${timeTo}.000`;
+  const url = `${API_URL}/rooms/${opts.id}/doorStateData?${getDateTimeUri(opts)}`;
 
   return fetch(url)
     .then(res => res.json())
     .catch(err => console.error('fetchDoorStateData', err));
+}
+
+const getDateTimeUri = (opts: IDateTimeUriOptions): string => {
+  const { dateFrom, dateTo } = opts;
+  let { timeFrom, timeTo } = opts;
+
+  // native <input type="time">  trims '00:00:00' to '00:00', but BE requires a format with the seconds
+  if (timeFrom === '00:00') timeFrom = '00:00:00';
+  if (timeTo === '00:00') timeTo = '00:00:00';
+
+  return `startDateTime=${dateFrom}T${timeFrom}.000&endDateTime=${dateTo}T${timeTo}.000`;
 }

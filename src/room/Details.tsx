@@ -18,7 +18,7 @@ import {
 import { NoData } from './NoData';
 
 const CFG = {
-  chartId: 'js-chart',
+  chartId: 'js-chart-xy',
   chartPieId: 'js-chart-pie',
   openedColor: 'blue',
   closedColor: 'red'
@@ -79,13 +79,13 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     Promise.all([this.fetchXyChartData(), this.fetchPieChartData(), this.fetchDoorStateChartData()])
       .then(([xyResponse, pieResponse, doorStateResponse]) => {
         this.setXyChartData(xyResponse);
-        this.setPieChartData(this.preparePieChartDate(pieResponse));
+        this.setPieChartData(this.preparePieChartData(pieResponse));
         this.renderRanges(doorStateResponse);
       })
       .catch(console.error);
   }
 
-  renderRanges({data}: IDoorStateDataResponse) {
+  renderRanges({data = []}: IDoorStateDataResponse) {
     const { dateAxis } = this;
     if (!dateAxis) return;
 
@@ -112,27 +112,33 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     if (this.pieChart) this.pieChart.data = pieChartData;
   }
 
-  preparePieChartDate({openTime, closedTime}: IDoorStateStatisticResponse): IPieChartItem[] {
+  preparePieChartData({openTime, closedTime}: IDoorStateStatisticResponse): IPieChartItem[] {
     const [openedHours, openedMinutes] = this.splitTime(openTime);
     const [closedHours, closedMinutes] = this.splitTime(closedTime);
 
     const noData = parseInt(openTime) === 0 && parseInt(closedTime) === 0; // BE response "00:00:00"
 
-    const calcAmount = (openedHours: string, openedMinutes: string): number => {
-      return (parseInt(openedHours) * 60) + parseInt(openedMinutes);
-    }
-
     return noData
       ? []
       : [
-        {state: 'Opened', amount: calcAmount(openedHours, openedMinutes), color: color(CFG.openedColor).lighten(0.65)},
-        {state: 'Closed', amount: calcAmount(closedHours, closedMinutes), color: color(CFG.closedColor).lighten(0.65)}
+        {state: 'Opened', amount: this.calcAmount(openedHours, openedMinutes), color: color(CFG.openedColor).lighten(0.65)},
+        {state: 'Closed', amount: this.calcAmount(closedHours, closedMinutes), color: color(CFG.closedColor).lighten(0.65)}
       ];
+  }
+
+  splitTime(s: string = ''): [string, string] {
+    const splitedOpen = s.split(':');
+    const [openHours, openMinutes] = splitedOpen; // ignoring seconds for now
+    return [openHours, openMinutes];
+  }
+
+  calcAmount(openedHours: string, openedMinutes: string): number {
+    return (parseInt(openedHours) * 60) + parseInt(openedMinutes);
   }
 
   fetchXyChartData(): Promise<IXyChartDataItem[]> {
     return fetchRoomTemperature({ id: this.state.location, ...this.state.datepicker })
-      .then(({ data }) => data.map((el: IXyChartDataItem) => ({
+      .then(({ data = [] }) => data.map((el: IXyChartDataItem) => ({
         temperature: el.temperature,
         timestamp: new Date(el.timestamp)
       })))
@@ -202,13 +208,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     pieSeries.dataFields.category = "state";
     pieSeries.slices.template.tooltipText = "{category}: {value.value} minutes";
 
-    this.setPieChartData(this.preparePieChartDate({ openTime, closedTime }));
-  }
-
-  splitTime(s: string): [string, string] {
-    const splitedOpen = s.split(':');
-    const [openHours, openMinutes] = splitedOpen; // ignoring ms
-    return [openHours, openMinutes];
+    this.setPieChartData(this.preparePieChartData({ openTime, closedTime }));
   }
 
   datepickerChanged = (field: keyof RoomDetailsState['datepicker'], value: string) => {
