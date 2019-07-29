@@ -308,7 +308,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
             <div id={CFG.chartId} style={{
               width: "100%",
               height: "25rem",
-              // display: this.state.charts.xy.length === 0 ? 'none' : 'block'
+              display: this.state.charts.xy.length === 0 ? 'none' : 'block'
             }}>
             </div>
 
