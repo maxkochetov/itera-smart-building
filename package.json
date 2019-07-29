@@ -2,7 +2,7 @@
   "name": "itera-smart-building",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://maxkochetov.github.io/itera-smart-building/",
+  "homepage": "https://maxkochetov.github.io/itera-smart-building",
   "dependencies": {
     "@amcharts/amcharts4": "^4.5.5",
     "@types/jest": "^24.0.15",
