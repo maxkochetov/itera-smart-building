@@ -250,7 +250,9 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
               <div className="col">
                 <div className="form-group">
                   <label>Date From</label>
-                  <input type="date" max="3000-12-31" min="1000-01-01" className="form-control"
+                  <input
+                    type="date"
+                    className="form-control"
                     onChange={({ target: { value } }) => this.datepickerChanged('dateFrom', value)}
                     value={this.state.datepicker.dateFrom} />
                 </div>
@@ -259,7 +261,9 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
               <div className="col">
                 <div className="form-group">
                   <label>Time From</label>
-                  <input type="time" min="1000-01-01" max="3000-12-31" className="form-control"
+                  <input
+                    type="time"
+                    className="form-control"
                     onChange={({ target: { value } }) => this.datepickerChanged('timeFrom', value)}
                     value={this.state.datepicker.timeFrom} />
                 </div>
@@ -268,7 +272,9 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
               <div className="col">
                 <div className="form-group">
                   <label>Date To</label>
-                  <input type="date" max="3000-12-31" min="1000-01-01" className="form-control"
+                  <input
+                    type="date"
+                    className="form-control"
                     onChange={({ target: { value } }) => this.datepickerChanged('dateTo', value)}
                     value={this.state.datepicker.dateTo} />
                 </div>
@@ -277,7 +283,9 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
               <div className="col">
                 <div className="form-group">
                   <label>Time To</label>
-                  <input type="time" min="1000-01-01" max="3000-12-31" className="form-control"
+                  <input
+                    type="time"
+                    className="form-control"
                     onChange={({ target: { value } }) => this.datepickerChanged('timeTo', value)}
                     value={this.state.datepicker.timeTo} />
                 </div>
