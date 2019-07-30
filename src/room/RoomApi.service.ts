@@ -29,11 +29,10 @@ type IFetchRoomTemperatureOptions = IFetchRoomStatisticOptions;
 type IFetchDoorStateDataOptions = IFetchRoomStatisticOptions;
 type IDateTimeUriOptions = IFetchRoomStatisticOptions;
 
-export function fetchRooms(): Promise<string[]> {
+export const fetchRooms = (): Promise<string[]> => {
   return fetch(`${API_URL}/rooms`)
     .then(handleHttpErrors)
-    .then(res => res.json())
-    .catch(err => console.error('fetchRooms', err));
+    .then(res => res.json());
 }
 
 export const fetchRoomTemperature = (opts: IFetchRoomTemperatureOptions): Promise<ITemperatureResponse> => {
@@ -41,8 +40,7 @@ export const fetchRoomTemperature = (opts: IFetchRoomTemperatureOptions): Promis
 
   return fetch(url)
     .then(handleHttpErrors)
-    .then(res => res.json())
-    .catch(err => console.error('fetchRoomTemperature', err));
+    .then(res => res.json());
 }
 
 export const fetchRoomStatistic = (opts: IFetchRoomStatisticOptions): Promise<IDoorStateStatisticResponse> => {
@@ -50,8 +48,7 @@ export const fetchRoomStatistic = (opts: IFetchRoomStatisticOptions): Promise<ID
 
   return fetch(url)
     .then(handleHttpErrors)
-    .then(res => res.json())
-    .catch(err => console.error('fetchRoomStatistic', err));
+    .then(res => res.json());
 }
 
 export const fetchDoorStateData = (opts: IFetchDoorStateDataOptions): Promise<IDoorStateDataResponse> => {
@@ -59,8 +56,7 @@ export const fetchDoorStateData = (opts: IFetchDoorStateDataOptions): Promise<ID
 
   return fetch(url)
     .then(handleHttpErrors)
-    .then(res => res.json())
-    .catch(err => console.error('fetchDoorStateData', err));
+    .then(res => res.json());
 }
 
 const getDateTimeUri = (opts: IDateTimeUriOptions): string => {
