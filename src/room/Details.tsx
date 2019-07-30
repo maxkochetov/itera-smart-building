@@ -25,7 +25,7 @@ const CFG = {
 }
 
 class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
-  chart: IXyChart | undefined; // undefined because we can't render the element in constructor phase
+  xyChart: IXyChart | undefined; // undefined because we can't render the element in constructor phase
   pieChart: PieChart | undefined;
   dateAxis: DateAxis<AxisRenderer> | undefined;
 
@@ -60,7 +60,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   }
 
   componentWillUnmount() {
-    if (this.chart) this.chart.dispose();
+    if (this.xyChart) this.xyChart.dispose();
     if (this.pieChart) this.pieChart.dispose();
   }
 
@@ -85,7 +85,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
       .catch(console.error);
   }
 
-  renderRanges({data = []}: IDoorStateDataResponse) {
+  renderRanges({data}: IDoorStateDataResponse) {
     const { dateAxis } = this;
     if (!dateAxis) return;
 
@@ -101,7 +101,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
       charts: { ...this.state.charts, xy: xyChartData }
     });
 
-    if (this.chart) this.chart.data = xyChartData;
+    if (this.xyChart) this.xyChart.data = xyChartData;
   }
 
   setPieChartData(pieChartData: IPieChartItem[]) {
@@ -126,7 +126,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
       ];
   }
 
-  splitTime(s: string = ''): [string, string] {
+  splitTime(s: string): [string, string] {
     const splitedOpen = s.split(':');
     const [openHours, openMinutes] = splitedOpen; // ignoring seconds for now
     return [openHours, openMinutes];
@@ -141,11 +141,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
       .then(({ data = [] }) => data.map((el: IXyChartDataItem) => ({
         temperature: el.temperature,
         timestamp: new Date(el.timestamp)
-      })))
-      .catch(err => {
-        console.error(err);
-        return [];
-      });
+      })));
   }
 
   fetchPieChartData(): Promise<IDoorStateStatisticResponse> {
@@ -165,11 +161,11 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   }
 
   createXyChart(chartData: IXyChartDataItem[]) {
-    this.chart = create(CFG.chartId, XYChart);
-    this.chart.cursor = new XYCursor();
+    this.xyChart = create(CFG.chartId, XYChart);
+    this.xyChart.cursor = new XYCursor();
     this.setXyChartData(chartData);
 
-    this.dateAxis = this.chart.xAxes.push(new DateAxis());
+    this.dateAxis = this.xyChart.xAxes.push(new DateAxis());
     this.dateAxis.title.text = "🕑 Time";
     this.dateAxis.tooltipDateFormat = "dd.MM";
     this.dateAxis.dateFormats.setKey("hour", "MMMM dt");
@@ -177,10 +173,10 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     this.dateAxis.startLocation = 1;
     this.dateAxis.endLocation = 0;
 
-    const valueAxis = this.chart.yAxes.push(new ValueAxis());
+    const valueAxis = this.xyChart.yAxes.push(new ValueAxis());
     valueAxis.title.text = "🌡 (°C)";
 
-    const series = this.chart.series.push(new LineSeries());
+    const series = this.xyChart.series.push(new LineSeries());
     series.dataFields.valueY = "temperature";
     series.dataFields.dateX = "timestamp";
     series.name = "Temperature";
@@ -195,7 +191,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
 
     const scrollbarX = new XYChartScrollbar(); // Add horizotal scrollbar with preview
     scrollbarX.series.push(series);
-    this.chart.scrollbarX = scrollbarX;
+    this.xyChart.scrollbarX = scrollbarX;
   }
 
   createPieChart({ openTime, closedTime }: IDoorStateStatisticResponse) {
@@ -225,7 +221,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   }
 
   render(): JSX.Element {
-    const { location, isLoading } = this.state;
+    const { location, isLoading, datepicker, charts } = this.state;
 
     return (
       <div className="container">
@@ -254,7 +250,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
                     type="date"
                     className="form-control"
                     onChange={({ target: { value } }) => this.datepickerChanged('dateFrom', value)}
-                    value={this.state.datepicker.dateFrom} />
+                    value={datepicker.dateFrom} />
                 </div>
               </div>
 
@@ -265,7 +261,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
                     type="time"
                     className="form-control"
                     onChange={({ target: { value } }) => this.datepickerChanged('timeFrom', value)}
-                    value={this.state.datepicker.timeFrom} />
+                    value={datepicker.timeFrom} />
                 </div>
               </div>
 
@@ -276,7 +272,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
                     type="date"
                     className="form-control"
                     onChange={({ target: { value } }) => this.datepickerChanged('dateTo', value)}
-                    value={this.state.datepicker.dateTo} />
+                    value={datepicker.dateTo} />
                 </div>
               </div>
 
@@ -287,7 +283,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
                     type="time"
                     className="form-control"
                     onChange={({ target: { value } }) => this.datepickerChanged('timeTo', value)}
-                    value={this.state.datepicker.timeTo} />
+                    value={datepicker.timeTo} />
                 </div>
               </div>
 
@@ -316,21 +312,21 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
             <div id={CFG.chartId} style={{
               width: "100%",
               height: "25rem",
-              display: this.state.charts.xy.length === 0 ? 'none' : 'block'
+              display: charts.xy.length === 0 ? 'none' : 'block'
             }}>
             </div>
 
-            {(this.state.charts.xy.length === 0 && !isLoading) && <NoData />}
+            {(charts.xy.length === 0 && !isLoading) && <NoData />}
 
             <div className="alert alert-secondary text-center">Proximity</div>
             <div id={CFG.chartPieId} className="mt-5" style={{
               width: "100%",
               height: "10rem",
-              display: this.state.charts.pie.length === 0 ? 'none' : 'block'
+              display: charts.pie.length === 0 ? 'none' : 'block'
             }}>
             </div>
 
-            {(this.state.charts.pie.length === 0 && !isLoading) && <NoData />}
+            {(charts.pie.length === 0 && !isLoading) && <NoData />}
 
           </div>
         </div>
