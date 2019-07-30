@@ -1,33 +1,25 @@
-import * as React from 'react';
+import React, { useState } from 'react';
 
-export interface RoomSearchProps {
+interface RoomSearchProps {
   onChange: (searchTerm: string) => void;
 }
 
-export interface RoomSearchState {
-  searchTerm: string;
-}
+export const RoomSearch = ({onChange}: RoomSearchProps): JSX.Element => {
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
-class RoomSearch extends React.Component<RoomSearchProps, RoomSearchState> {
-  constructor(props: RoomSearchProps) {
-    super(props);
-
-    this.state = {
-      searchTerm: ''
-    };
+  const searchTermChanged = (searchTerm: string) => {
+    setSearchTerm(searchTerm);
+    onChange(searchTerm);
   }
 
-  render(): JSX.Element {
-    return (
-      <div className="form-group">
-        <input
-          type="text"
-          className="form-control"
-          placeholder="Search for a room.."
-          onChange={ ({target: {value: searchTerm}}) => this.props.onChange(searchTerm) }/>
-      </div>
-    );
-  }
+  return (
+    <div className="form-group">
+      <input
+        type="text"
+        className="form-control"
+        value={searchTerm}
+        placeholder="Search for a room.."
+        onChange={( {target: {value: searchTerm} }) => searchTermChanged(searchTerm) } />
+    </div>
+  );
 }
-
-export default RoomSearch;
