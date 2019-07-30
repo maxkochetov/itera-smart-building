@@ -1,8 +1,8 @@
 {
   "files": {
     "main.css": "/itera-smart-building/static/css/main.5facb584.chunk.css",
-    "main.js": "/itera-smart-building/static/js/main.3b698abe.chunk.js",
-    "main.js.map": "/itera-smart-building/static/js/main.3b698abe.chunk.js.map",
+    "main.js": "/itera-smart-building/static/js/main.99b285c8.chunk.js",
+    "main.js.map": "/itera-smart-building/static/js/main.99b285c8.chunk.js.map",
     "runtime~main.js": "/itera-smart-building/static/js/runtime~main.9dcdb811.js",
     "runtime~main.js.map": "/itera-smart-building/static/js/runtime~main.9dcdb811.js.map",
     "xlsx.js": "/itera-smart-building/static/js/xlsx.f50fc01d.chunk.js",
@@ -17,7 +17,7 @@
     "static/js/6.7657373e.chunk.js": "/itera-smart-building/static/js/6.7657373e.chunk.js",
     "static/js/6.7657373e.chunk.js.map": "/itera-smart-building/static/js/6.7657373e.chunk.js.map",
     "index.html": "/itera-smart-building/index.html",
-    "precache-manifest.0b549afa8e88871f4aa70c83d44cb917.js": "/itera-smart-building/precache-manifest.0b549afa8e88871f4aa70c83d44cb917.js",
+    "precache-manifest.d52cf3c2b5e2acde60026df6b0edc52b.js": "/itera-smart-building/precache-manifest.d52cf3c2b5e2acde60026df6b0edc52b.js",
     "service-worker.js": "/itera-smart-building/service-worker.js",
     "static/css/3.22a7d4ef.chunk.css.map": "/itera-smart-building/static/css/3.22a7d4ef.chunk.css.map",
     "static/css/main.5facb584.chunk.css.map": "/itera-smart-building/static/css/main.5facb584.chunk.css.map"
