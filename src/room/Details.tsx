@@ -216,7 +216,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     });
   }
 
-  formatDate(date: Date, chunk = 0): string {
+  formatDate(date: Date, chunk: 0 | 1 = 0): string {
     return date.toISOString().split('T')[chunk];
   }
 
