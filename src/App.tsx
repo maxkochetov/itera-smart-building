@@ -5,7 +5,7 @@ import './App.css';
 import RoomDetails from './room/Details';
 import RoomList from './room/List';
 
-import { BrowserRouter as Router, Route } from "react-router-dom";
+import { HashRouter as Router, Route } from "react-router-dom";
 
 function App() {
   return (
