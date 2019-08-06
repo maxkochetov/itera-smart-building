@@ -37,16 +37,17 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   constructor(props: RoomDetailsProps) {
     super(props);
     useTheme(am4themes_animated);
-    const dateFrom = new Date();
+    const currentDate = new Date();
+    const formattedTime = new Date().toTimeString().split(' ')[0];
 
     this.state = {
       isLoading: true,
       location: props.match.params.id,
       datepicker: {
-        dateFrom: this.formatDate(new Date(dateFrom.setDate(dateFrom.getDate() - 1))),
-        timeFrom: new Date().toLocaleTimeString(),
+        dateFrom: this.formatDate(new Date(currentDate.setDate(currentDate.getDate() - 1))),
+        timeFrom: formattedTime,
         dateTo: this.formatDate(new Date()),
-        timeTo: new Date().toLocaleTimeString()
+        timeTo: formattedTime
       },
       charts: {
         pie: [],
