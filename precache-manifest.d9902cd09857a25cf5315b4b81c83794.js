@@ -1,6 +1,6 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "52da220edc7bd02ad7b944a21c0b1318",
+    "revision": "32a93b419884cb11e0122fa272b79fd7",
     "url": "/itera-smart-building/index.html"
   },
   {

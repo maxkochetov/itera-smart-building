@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/itera-smart-building/precache-manifest.2d69984b1267b18d8daed207c045a682.js"
+  "/itera-smart-building/precache-manifest.d9902cd09857a25cf5315b4b81c83794.js"
 );
 
 self.addEventListener('message', (event) => {
