@@ -1,5 +1,7 @@
 import React from 'react';
 import { Link } from "react-router-dom";
+
+// import DayPickerInput from 'react-day-picker/DayPickerInput';
 import { useTheme, create, color, Color } from "@amcharts/amcharts4/core";
 import am4themes_animated from "@amcharts/amcharts4/themes/animated";
 
@@ -92,6 +94,22 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
 
     dateAxis.axisRanges.clear();
 
+    if (this.state.charts.xy.length === 0) {
+      /* in this branch we don't have temperature data with timestamps, so we need to map new timestamps from
+         doorStateData response to have proper date axis for ranges */
+
+      const xyChartData: IXyChartDataItem[] = data.reduce((acc: any[], curr: IXyChartDoorStateData) => {
+        const newItems: IXyChartDataItem[] = [
+          { timestamp: new Date(curr.startDateTime), temperature: null },
+          { timestamp: new Date(curr.endDateTime), temperature: null }
+        ];
+
+        return acc.concat(newItems);
+      }, []);
+
+      this.setXyChartData(xyChartData);
+    }
+
     data.forEach((el: IXyChartDoorStateData) => {
       this.createRange(dateAxis, new Date(el.startDateTime), new Date(el.endDateTime), this.rangesColors[el.state]);
     });
@@ -114,27 +132,28 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   }
 
   preparePieChartData({openTime, closedTime}: IDoorStateStatisticResponse): IPieChartItem[] {
-    const [openedHours, openedMinutes] = this.splitTime(openTime);
-    const [closedHours, closedMinutes] = this.splitTime(closedTime);
+    const noData = (openTime === '00:00:00' && closedTime === '00:00:00'); // BE response "00:00:00"
 
-    const noData = parseInt(openTime) === 0 && parseInt(closedTime) === 0; // BE response "00:00:00"
+    const openedAmount = this.calcAmount(...this.splitTime(openTime));
+    const closedAmount = this.calcAmount(...this.splitTime(closedTime));
 
     return noData
       ? []
       : [
-        {state: 'Opened', amount: this.calcAmount(openedHours, openedMinutes), color: color(CFG.openedColor).lighten(0.65)},
-        {state: 'Closed', amount: this.calcAmount(closedHours, closedMinutes), color: color(CFG.closedColor).lighten(0.65)}
-      ];
+          {state: 'Opened', amount: openedAmount, color: color(CFG.openedColor).lighten(0.65)},
+          {state: 'Closed', amount: closedAmount, color: color(CFG.closedColor).lighten(0.65)}
+        ];
   }
 
-  splitTime(s: string): [string, string] {
-    const splitedOpen = s.split(':');
-    const [openHours, openMinutes] = splitedOpen; // ignoring seconds for now
-    return [openHours, openMinutes];
+  splitTime(s: string): [string, string, string] {
+    const [openHours, openMinutes, openSeconds] = s.split(':');
+    return [openHours, openMinutes, openSeconds];
   }
 
-  calcAmount(openedHours: string, openedMinutes: string): number {
-    return (parseInt(openedHours) * 60) + parseInt(openedMinutes);
+  calcAmount(openedHours: string, openedMinutes: string, openedSeconds: string): number {
+    const amount = Number((parseInt(openedHours) * 60) + parseInt(openedMinutes) + (parseInt(openedSeconds) / 60));
+
+    return parseFloat(amount.toFixed(amount < 1 ? 1 : 0))
   }
 
   fetchXyChartData(): Promise<IXyChartDataItem[]> {
@@ -175,7 +194,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     this.dateAxis.endLocation = 0;
 
     const valueAxis = this.xyChart.yAxes.push(new ValueAxis());
-    valueAxis.title.text = "🌡 (°C)";
+    valueAxis.title.text = (chartData.length > 0) ? '🌡 (°C)' : 'No Temperature Data';
 
     const series = this.xyChart.series.push(new LineSeries());
     series.dataFields.valueY = "temperature";
@@ -184,10 +203,6 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     series.stroke = color('yellow').lighten(0.1);
     series.fill = color('#efefef');
     series.strokeWidth = 1;
-    // series.strokeOpacity = 0.8;
-    // series.fillOpacity = 0.5;
-    // series.tensionY = 0.97;
-    // series.tensionX = 0.97;
     series.tooltipText = "At {dateX.formatDate('HH:mm')} the temperature was {valueY}°";
 
     const scrollbarX = new XYChartScrollbar(); // Add horizotal scrollbar with preview
@@ -223,6 +238,8 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
 
   render(): JSX.Element {
     const { location, isLoading, datepicker, charts } = this.state;
+    const noDataForPie = (charts.pie.length === 0 && !isLoading);
+    const noDataForXy = (charts.xy.length === 0 && noDataForPie);
 
     return (
       <div className="container">
@@ -252,6 +269,12 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
                     className="form-control"
                     onChange={({ target: { value } }) => this.datepickerChanged('dateFrom', value)}
                     value={datepicker.dateFrom} />
+
+                  {/* <DayPickerInput
+                    format=""
+                    placeholder="DD/MM/YYYY"
+                    onDayChange={day => console.log(day)}
+                  /> */}
                 </div>
               </div>
 
@@ -313,21 +336,21 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
             <div id={CFG.chartId} style={{
               width: "100%",
               height: "25rem",
-              display: charts.xy.length === 0 ? 'none' : 'block'
+              display: noDataForXy ? 'none' : 'block'
             }}>
             </div>
 
-            {(charts.xy.length === 0 && !isLoading) && <NoData />}
+            {noDataForXy && <NoData />}
 
             <div className="alert alert-secondary text-center">Proximity</div>
             <div id={CFG.chartPieId} className="mt-5" style={{
               width: "100%",
               height: "10rem",
-              display: charts.pie.length === 0 ? 'none' : 'block'
+              display: noDataForPie ? 'none' : 'block'
             }}>
             </div>
 
-            {(charts.pie.length === 0 && !isLoading) && <NoData />}
+            {noDataForPie && <NoData />}
 
           </div>
         </div>

@@ -27,7 +27,7 @@ export interface IXyChart extends XYChart {
 
 export interface IXyChartDataItem {
   timestamp: Date;
-  temperature: number;
+  temperature: number | null;
 }
 
 export interface IPieChartItem {
