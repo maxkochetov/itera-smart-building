@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from "react-router-dom";
+import Flatpickr from 'react-flatpickr';
 
-// import DayPickerInput from 'react-day-picker/DayPickerInput';
 import { useTheme, create, color, Color } from "@amcharts/amcharts4/core";
 import am4themes_animated from "@amcharts/amcharts4/themes/animated";
 
@@ -18,6 +18,7 @@ import {
 } from './RoomApi.service';
 
 import { NoData } from './NoData';
+import './Details.css';
 
 const CFG = {
   chartId: 'js-chart-xy',
@@ -46,9 +47,9 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
       isLoading: true,
       location: props.match.params.id,
       datepicker: {
-        dateFrom: this.formatDate(new Date(currentDate.setDate(currentDate.getDate() - 1))),
+        dateFrom: new Date(this.formatDate(new Date(currentDate.setDate(currentDate.getDate() - 1)))),
         timeFrom: formattedTime,
-        dateTo: this.formatDate(new Date()),
+        dateTo: new Date(this.formatDate(new Date())),
         timeTo: formattedTime
       },
       charts: {
@@ -70,7 +71,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   create = () => {
     Promise.all([this.fetchXyChartData(), this.fetchPieChartData(), this.fetchDoorStateChartData()])
       .then(([xyResponse, pieResponse, doorStateResponse]) => {
-        this.createXyChart(xyResponse);
+        this.createXyChart(xyResponse, doorStateResponse.data.length > 0);
         this.createPieChart(pieResponse);
         this.renderRanges(doorStateResponse);
       })
@@ -180,7 +181,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     range.axisFill.fillOpacity = 0.3;
   }
 
-  createXyChart(chartData: IXyChartDataItem[]) {
+  createXyChart(chartData: IXyChartDataItem[], hasRangesData: boolean) {
     this.xyChart = create(CFG.chartId, XYChart);
     this.xyChart.cursor = new XYCursor();
     this.setXyChartData(chartData);
@@ -200,7 +201,8 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     series.dataFields.valueY = "temperature";
     series.dataFields.dateX = "timestamp";
     series.name = "Temperature";
-    series.stroke = color('yellow').lighten(0.1);
+    const strokeColor = hasRangesData ? 'yellow' : 'orange';
+    series.stroke = color(strokeColor).lighten(0.1);
     series.fill = color('#efefef');
     series.strokeWidth = 1;
     series.tooltipText = "At {dateX.formatDate('HH:mm')} the temperature was {valueY}°";
@@ -223,7 +225,19 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     this.setPieChartData(this.preparePieChartData({ openTime, closedTime }));
   }
 
-  datepickerChanged = (field: keyof RoomDetailsState['datepicker'], value: string) => {
+  dateChanged(dates: Date[]) {
+    if (dates.length !== 2) return; // we expect only a pair of dates
+
+    this.setState({
+      datepicker: {
+        ...this.state.datepicker,
+        dateFrom: dates[0],
+        dateTo: dates[1]
+      }
+    });
+  }
+
+  timeChanged = (field: keyof RoomDetailsState['datepicker'], value: string) => {
     this.setState({
       datepicker: {
         ...this.state.datepicker,
@@ -233,7 +247,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
   }
 
   formatDate(date: Date, chunk: 0 | 1 = 0): string {
-    return date.toISOString().split('T')[chunk];
+    return date.toJSON().split('T')[chunk];
   }
 
   render(): JSX.Element {
@@ -261,20 +275,17 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
             </div>
 
             <div className="row">
-              <div className="col">
-                <div className="form-group">
-                  <label>Date From</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    onChange={({ target: { value } }) => this.datepickerChanged('dateFrom', value)}
-                    value={datepicker.dateFrom} />
+              <div className="col-4">
+                <div className="form-group details-datepicker">
+                  <label>Date Range</label>
 
-                  {/* <DayPickerInput
-                    format=""
-                    placeholder="DD/MM/YYYY"
-                    onDayChange={day => console.log(day)}
-                  /> */}
+                  <Flatpickr
+                    className='form-control'
+                    value={[datepicker.dateFrom, datepicker.dateTo]}
+                    options={{mode: 'range', dateFormat: "d.m.Y", defaultDate: [datepicker.dateFrom, datepicker.dateTo]}}
+                    onChange={dates => { this.dateChanged(dates); }}
+                  />
+
                 </div>
               </div>
 
@@ -284,19 +295,8 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
                   <input
                     type="time"
                     className="form-control"
-                    onChange={({ target: { value } }) => this.datepickerChanged('timeFrom', value)}
+                    onChange={({ target: { value } }) => this.timeChanged('timeFrom', value)}
                     value={datepicker.timeFrom} />
-                </div>
-              </div>
-
-              <div className="col">
-                <div className="form-group">
-                  <label>Date To</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    onChange={({ target: { value } }) => this.datepickerChanged('dateTo', value)}
-                    value={datepicker.dateTo} />
                 </div>
               </div>
 
@@ -306,7 +306,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
                   <input
                     type="time"
                     className="form-control"
-                    onChange={({ target: { value } }) => this.datepickerChanged('timeTo', value)}
+                    onChange={({ target: { value } }) => this.timeChanged('timeTo', value)}
                     value={datepicker.timeTo} />
                 </div>
               </div>
@@ -318,8 +318,6 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
                 </button>
               </div>
             </div>
-
-            {/* TODO: info message about timings */}
 
             <div className="alert alert-warning d-flex justify-content-around align-items-center">
               <div className="d-flex align-items-center">

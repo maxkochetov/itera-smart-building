@@ -19,9 +19,9 @@ export interface IDoorStateStatisticResponse {
 
 interface IFetchRoomStatisticOptions {
   id: string;
-  dateFrom: string;
+  dateFrom: Date;
   timeFrom: string;
-  dateTo: string;
+  dateTo: Date;
   timeTo: string;
 }
 
@@ -67,5 +67,11 @@ const getDateTimeUri = (opts: IDateTimeUriOptions): string => {
   if (timeFrom === '00:00') timeFrom = '00:00:00';
   if (timeTo === '00:00') timeTo = '00:00:00';
 
-  return `startDateTime=${dateFrom}T${timeFrom}.000&endDateTime=${dateTo}T${timeTo}.000`;
+  return `startDateTime=${constructDate(dateFrom)}T${timeFrom}.000&endDateTime=${constructDate(dateTo)}T${timeTo}.000`;
+}
+
+const padLeft = (n: number) => n < 10 ? `0${n}` : n;
+
+const constructDate = (d: Date): string => {
+  return `${d.getFullYear()}-${padLeft(d.getMonth() + 1)}-${padLeft(d.getDate())}`;
 }

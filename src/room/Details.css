@@ -1,0 +1,3 @@
+.details-datepicker input.form-control[readonly] {
+  background-color: #fff;
+}

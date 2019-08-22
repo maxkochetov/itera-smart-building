@@ -10,9 +10,9 @@ export interface RoomDetailsState {
   isLoading: boolean;
   location: string;
   datepicker: {
-    dateFrom: string;
+    dateFrom: Date;
     timeFrom: string;
-    dateTo: string;
+    dateTo: Date;
     timeTo: string;
   }
   charts: {
