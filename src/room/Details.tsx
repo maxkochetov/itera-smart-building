@@ -201,8 +201,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     series.dataFields.valueY = "temperature";
     series.dataFields.dateX = "timestamp";
     series.name = "Temperature";
-    const strokeColor = hasRangesData ? 'yellow' : 'orange';
-    series.stroke = color(strokeColor).lighten(0.1);
+    series.stroke = color(hasRangesData ? 'yellow' : 'orange').lighten(0.1);
     series.fill = color('#efefef');
     series.strokeWidth = 1;
     series.tooltipText = "At {dateX.formatDate('HH:mm')} the temperature was {valueY}°";
