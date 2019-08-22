@@ -1,6 +1,6 @@
 import { API_URL } from '../constants';
 import { IXyChartDoorStateData, IXyChartDataItem } from './Details.interface';
-import { handleHttpErrors } from './../utils';
+import { handleHttpErrors, getDateTimeUri } from './../utils';
 
 export interface IDoorStateDataResponse {
   data: IXyChartDoorStateData[];
@@ -27,7 +27,7 @@ interface IFetchRoomStatisticOptions {
 
 type IFetchRoomTemperatureOptions = IFetchRoomStatisticOptions;
 type IFetchDoorStateDataOptions = IFetchRoomStatisticOptions;
-type IDateTimeUriOptions = IFetchRoomStatisticOptions;
+export type IDateTimeUriOptions = IFetchRoomStatisticOptions;
 
 export const fetchRooms = (): Promise<string[]> => {
   return fetch(`${API_URL}/rooms`)
@@ -57,21 +57,4 @@ export const fetchDoorStateData = (opts: IFetchDoorStateDataOptions): Promise<ID
   return fetch(url)
     .then(handleHttpErrors)
     .then(res => res.json());
-}
-
-const getDateTimeUri = (opts: IDateTimeUriOptions): string => {
-  const { dateFrom, dateTo } = opts;
-  let { timeFrom, timeTo } = opts;
-
-  // native <input type="time"> trims '00:00:00' to '00:00', but BE requires a format with the seconds
-  if (timeFrom === '00:00') timeFrom = '00:00:00';
-  if (timeTo === '00:00') timeTo = '00:00:00';
-
-  return `startDateTime=${constructDate(dateFrom)}T${timeFrom}.000&endDateTime=${constructDate(dateTo)}T${timeTo}.000`;
-}
-
-const padLeft = (n: number) => n < 10 ? `0${n}` : n;
-
-const constructDate = (d: Date): string => {
-  return `${d.getFullYear()}-${padLeft(d.getMonth() + 1)}-${padLeft(d.getDate())}`;
 }
