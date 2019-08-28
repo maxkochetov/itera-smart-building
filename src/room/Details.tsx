@@ -195,6 +195,7 @@ class RoomDetails extends React.Component<RoomDetailsProps, RoomDetailsState> {
     this.dateAxis.endLocation = 0;
 
     const valueAxis = this.xyChart.yAxes.push(new ValueAxis());
+    valueAxis.min = 0;
     valueAxis.title.text = (chartData.length > 0) ? '🌡 (°C)' : 'No Temperature Data';
 
     const series = this.xyChart.series.push(new LineSeries());
